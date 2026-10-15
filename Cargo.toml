@@ -9,8 +9,8 @@ documentation = "https://docs.rs/koine"
 readme = "README.md"
 repository = "https://github.com/udoprog/koine"
 # The code is MIT OR Apache-2.0; the country and locale tables are generated
-# from Unicode CLDR, which is Unicode-3.0. The terms of the ISO 639-3 data are
-# being confirmed with SIL; see "Data sources" in the README.
+# from Unicode CLDR, which is Unicode-3.0. The ISO 639-3 codes are used under
+# SIL's terms of use; see "Data sources" in the README.
 license = "(MIT OR Apache-2.0) AND Unicode-3.0"
 keywords = ["country", "iso3166", "iso639", "language", "locale"]
 categories = ["internationalization", "localization", "no-std", "wasm"]

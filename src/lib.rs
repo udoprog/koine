@@ -81,8 +81,10 @@
 //!   [iso639-3.sil.org]. The codes, names and classifications are SIL's.
 //!   The downloaded file, `data/language/iso-639-3.tab`, is kept in the
 //!   repository for regeneration and is not part of the published package.
-//!   *Pending: the author is confirming SIL's terms of use with SIL before
-//!   this crate is published.*
+//!   The codes are used under SIL's ISO 639-3 Code Tables Terms of Use,
+//!   published on [iso639-3.sil.org], which is credited here as the source
+//!   of the codes; the identifiers are used as published, neither modified
+//!   nor extended.
 //! * **Countries and locales** (`country`, `locale`): [Unicode CLDR]
 //!   release 48.2, from [unicode.org], under the [Unicode License v3]
 //!   (`Unicode-3.0`), whose text ships with this crate as
@@ -94,7 +96,8 @@
 //!   `data/language/to-3166.csv`, a mapping from each language to the
 //!   country whose flag can stand for it. It is written and maintained by
 //!   hand in this repository, best-effort and not authoritative, and is
-//!   licensed with the crate (MIT OR Apache-2.0).
+//!   licensed with the crate (MIT OR Apache-2.0). It is an addition of this
+//!   crate's and not part of the ISO 639-3 standard.
 //!
 //! CLDR data is Copyright © Unicode, Inc.; the full copyright and permission
 //! notice is in `data/cldr/LICENSE`.
