@@ -1,0 +1,22 @@
+# A cut-down fixture in the shape of the listing `download-cldr` writes.
+bs_BA
+ca_AD
+de
+de_DE
+en
+en_001
+en_150
+en_GB
+en_US
+es_419
+fr_CI
+fr_FR
+ha_NG
+ja_JP
+root
+sq_XK
+sr_Cyrl_BA
+sr_Latn_BA
+sv_SE
+yue_Hant_HK
+zz_US

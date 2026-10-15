@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!-- A cut-down fixture in the shape of CLDR's common/validity/region.xml. -->
+<supplementalData>
+	<version number="$Revision$"/>
+	<idValidity>
+		<id type='region' idStatus='regular'>
+			AC~D AQ BA CI DE FR GB IC
+			JP NG SE US XK
+		</id>
+		<id type='region' idStatus='special'>XA XB</id>
+		<id type='region' idStatus='macroregion'>001~2 009 011 019 021 030 039 142 150 154 155 202 419 EU QO UN</id>
+		<id type='region' idStatus='deprecated'>AN BU CS DD</id>
+		<id type='region' idStatus='private_use'>AA QM~N XC~D</id>
+		<id type='region' idStatus='unknown'>ZZ</id>
+	</idValidity>
+</supplementalData>

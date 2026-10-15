@@ -1,0 +1,62 @@
+[package]
+name = "koine"
+version = "0.1.0"
+authors = ["John-John Tedro <udoprog@tedro.se>"]
+edition = "2024"
+rust-version = "1.88"
+description = "Locale primitives: ISO 639 languages, ISO 3166-1 countries and valid language+country locales, as compact value types over generated static tables."
+documentation = "https://docs.rs/koine"
+readme = "README.md"
+repository = "https://github.com/udoprog/koine"
+# The code is MIT OR Apache-2.0; the country and locale tables are generated
+# from Unicode CLDR, which is Unicode-3.0. The terms of the ISO 639-3 data are
+# being confirmed with SIL; see "Data sources" in the README.
+license = "(MIT OR Apache-2.0) AND Unicode-3.0"
+keywords = ["iso639", "iso3166", "language", "country", "locale"]
+categories = ["internationalization", "localization", "no-std", "wasm"]
+# What the library builds from, and the license of the CLDR data its tables
+# are generated from. The rest of data/ (notably the raw ISO 639-3 download,
+# data/language/iso-639-3.tab, which stays out of the package) and the tools
+# crate that downloads and regenerates it stay in the repository. To ship
+# another data file, name it here, such as "/data/language/to-3166.csv".
+include = ["/src/**", "/tests/**", "/README.md", "/LICENSE-*", "/data/cldr/LICENSE", "/Cargo.toml"]
+
+# tools downloads the vendored data and regenerates the tables from it; it is
+# never published.
+[workspace]
+members = ["tools"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(koine_docsrs)'] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "koine_docsrs"]
+
+# Each table is its own feature, so a crate compiles only the tables it uses;
+# the language table is by far the largest. `locale` needs the other two.
+#
+# A dependency that is not yet 1.0 and appears in the public API is named
+# after its version (feature, dependency key and module), so a later version
+# can be added beside it: `musli01`, `sqll014` and `yew023`.
+[features]
+default = ["language", "country", "locale"]
+language = ["dep:phf"]
+country = ["dep:phf"]
+locale = ["language", "country"]
+serde = ["dep:serde"]
+musli01 = ["dep:musli-core01"]
+sqll014 = ["dep:sqll014"]
+yew023 = ["dep:yew023"]
+
+[dependencies]
+phf = { version = "0.14.0", default-features = false, optional = true }
+
+serde = { version = "1.0.229", default-features = false, optional = true }
+musli-core01 = { package = "musli-core", version = "0.1.7", default-features = false, optional = true }
+sqll014 = { package = "sqll", version = "0.14.7", default-features = false, features = ["std", "threadsafe"], optional = true }
+yew023 = { package = "yew", version = "0.23.0", default-features = false, optional = true }
+
+[dev-dependencies]
+serde_json = "1.0.151"
+musli = { version = "0.1.9", features = ["json"] }

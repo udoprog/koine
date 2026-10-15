@@ -1,0 +1,15 @@
+[package]
+name = "tools"
+edition = "2024"
+publish = false
+description = "Downloads koine's vendored source data and regenerates its tables."
+
+[dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.6.7", features = ["derive"] }
+csv = "1.4.0"
+phf_codegen = "0.14.0"
+reqwest = { version = "0.13.5", features = ["blocking"] }
+serde = { version = "1.0.229", features = ["derive"] }
+quick-xml = "0.38.4"
+zip = { version = "8.1.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }

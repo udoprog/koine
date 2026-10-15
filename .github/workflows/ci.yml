@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '17 4 * * 3'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --workspace --all-targets
+    - run: cargo test --workspace --all-features --all-targets
+    - run: cargo test --workspace --all-features --doc
+
+  # The committed tables match what the vendored data generates.
+  generated:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo run -p tools -- --check
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@1.88
+    - run: cargo build -p koine --all-features
+
+  # Each feature is checked alone, because a feature that only compiles
+  # alongside another breaks the crates that take it alone.
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+    - run: cargo clippy -p koine --all-targets --no-default-features -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features country -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features locale -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,serde -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,musli01 -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,sqll014 -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,yew023 -- -D warnings
+    - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+    - run: cargo check -p koine --target wasm32-unknown-unknown --features serde,musli01,yew023
+
+  docs:
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo doc -p koine --all-features --no-deps
+
+  # How docs.rs builds the docs, with the feature badges of `doc(cfg)`.
+  docsrs:
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: --cfg koine_docsrs -D warnings
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo doc -p koine --all-features --no-deps
+
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - run: cargo fmt --check --all

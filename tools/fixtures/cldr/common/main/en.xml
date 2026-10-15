@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- A cut-down fixture in the shape of CLDR's common/main/en.xml. -->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="en"/>
+	</identity>
+	<localeDisplayNames>
+		<territories>
+			<territory type="001">world</territory>
+			<territory type="002">Africa</territory>
+			<territory type="009">Oceania</territory>
+			<territory type="011">Western Africa</territory>
+			<territory type="019">Americas</territory>
+			<territory type="021">Northern America</territory>
+			<territory type="030">Eastern Asia</territory>
+			<territory type="039">Southern Europe</territory>
+			<territory type="142">Asia</territory>
+			<territory type="150">Europe</territory>
+			<territory type="154">Northern Europe</territory>
+			<territory type="155">Western Europe</territory>
+			<territory type="AC">Ascension Island</territory>
+			<territory type="AD">Andorra</territory>
+			<territory type="AQ">Antarctica</territory>
+			<territory type="BA">Bosnia &amp; Herzegovina</territory>
+			<territory type="BA" alt="short">Bosnia</territory>
+			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">Ivory Coast</territory>
+			<territory type="DE">Germany</territory>
+			<territory type="FR">France</territory>
+			<territory type="GB">United Kingdom</territory>
+			<territory type="GB" alt="short">UK</territory>
+			<territory type="IC">Canary Islands</territory>
+			<territory type="JP">Japan</territory>
+			<territory type="NG">Nigeria</territory>
+			<territory type="QO">Outlying Oceania</territory>
+			<territory type="SE">Sweden</territory>
+			<territory type="US">United States</territory>
+			<territory type="US" alt="short">US</territory>
+			<territory type="XK">Kosovo</territory>
+		</territories>
+	</localeDisplayNames>
+</ldml>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!-- A cut-down fixture in the shape of CLDR's supplementalData.xml. -->
+<supplementalData>
+	<version number="$Revision$"/>
+	<territoryContainment>
+		<group type="001" contains="019 002 150 142 009"/>
+		<group type="001" contains="EU UN" status="grouping"/>
+		<group type="002" contains="011"/>
+		<group type="202" contains="011" status="grouping"/>
+		<group type="011" contains="CI NG"/>
+		<group type="019" contains="021"/>
+		<group type="021" contains="US"/>
+		<group type="419" contains="013" status="grouping"/>
+		<group type="150" contains="154 155 039"/>
+		<group type="154" contains="GB SE"/>
+		<group type="155" contains="DE FR"/>
+		<group type="039" contains="AD BA"/>
+		<group type="142" contains="030"/>
+		<group type="030" contains="JP"/>
+		<group type="009" contains="QO"/>
+		<group type="QO" contains="AC AQ"/>
+		<group type="EU" contains="DE FR SE" status="grouping"/>
+		<group type="AN" contains="SX CW" status="deprecated"/>
+	</territoryContainment>
+	<codeMappings>
+		<languageCodes type="aa" alpha3="aar"/>
+		<territoryCodes type="AA" numeric="958" alpha3="AAA"/>
+		<territoryCodes type="AC" alpha3="ASC"/>
+		<territoryCodes type="AD" numeric="020" alpha3="AND" fips10="AN"/>
+		<territoryCodes type="AQ" numeric="010" alpha3="ATA" fips10="AY"/>
+		<territoryCodes type="BA" numeric="070" alpha3="BIH" fips10="BK"/>
+		<territoryCodes type="CI" numeric="384" alpha3="CIV" fips10="IV"/>
+		<territoryCodes type="DE" numeric="276" alpha3="DEU" fips10="GM"/>
+		<territoryCodes type="FR" numeric="250" alpha3="FRA"/>
+		<territoryCodes type="GB" numeric="826" alpha3="GBR" fips10="UK"/>
+		<territoryCodes type="IC"/>
+		<territoryCodes type="JP" numeric="392" alpha3="JPN" fips10="JA"/>
+		<territoryCodes type="NG" numeric="566" alpha3="NGA" fips10="NI"/>
+		<territoryCodes type="SE" numeric="752" alpha3="SWE" fips10="SW"/>
+		<territoryCodes type="US" numeric="840" alpha3="USA"/>
+		<territoryCodes type="XK" numeric="983" alpha3="XKK" fips10="KV"/>
+	</codeMappings>
+</supplementalData>
