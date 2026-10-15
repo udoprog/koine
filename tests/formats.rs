@@ -1,6 +1,6 @@
 //! The value types encode as their string forms.
 
-#![cfg(feature = "locale")]
+#![cfg(all(feature = "locale", any(feature = "serde", feature = "musli01")))]
 
 use koine::{Country, Language, Locale};
 
