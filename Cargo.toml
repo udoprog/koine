@@ -8,21 +8,12 @@ description = "Locale primitives: ISO 639 languages, ISO 3166-1 countries and va
 documentation = "https://docs.rs/koine"
 readme = "README.md"
 repository = "https://github.com/udoprog/koine"
-# The code is MIT OR Apache-2.0; the country and locale tables are generated
-# from Unicode CLDR, which is Unicode-3.0. The ISO 639-3 codes are used under
-# SIL's terms of use; see "Data sources" in the README.
 license = "(MIT OR Apache-2.0) AND Unicode-3.0"
 keywords = ["country", "iso3166", "iso639", "language", "locale"]
 categories = ["internationalization", "localization", "no-std", "wasm"]
-# What the library builds from, and the license of the CLDR data its tables
-# are generated from. The rest of data/ (notably the raw ISO 639-3 download,
-# data/language/iso-639-3.tab, which stays out of the package) and the tools
-# crate that downloads and regenerates it stay in the repository. To ship
-# another data file, name it here, such as "/data/language/to-3166.csv".
+# The CLDR license must ship with the tables generated from it.
 include = ["/src/**", "/tests/**", "/README.md", "/LICENSE-*", "/data/cldr/LICENSE", "/Cargo.toml"]
 
-# tools downloads the vendored data and regenerates the tables from it; it is
-# never published.
 [workspace]
 members = ["tools"]
 
@@ -33,12 +24,8 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(koine_docsrs)'] }
 all-features = true
 rustdoc-args = ["--cfg", "koine_docsrs"]
 
-# Each table is its own feature, so a crate compiles only the tables it uses;
-# the language table is by far the largest. `locale` needs the other two.
-#
-# A dependency that is not yet 1.0 and appears in the public API is named
-# after its version (feature, dependency key and module), so a later version
-# can be added beside it: `musli01`, `sqll014` and `yew023`.
+# Pre-1.0 public dependencies are named after their version so a later one
+# can be added beside them.
 [features]
 default = ["language", "country", "locale"]
 language = ["dep:phf"]
