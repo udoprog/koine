@@ -1,0 +1,3 @@
+# The code is MIT OR Apache-2.0; the country and locale tables are generated
+# from Unicode CLDR, which is Unicode-3.0.
+license = "(MIT OR Apache-2.0) AND Unicode-3.0"

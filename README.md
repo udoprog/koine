@@ -16,7 +16,7 @@ reaches the table's entry for names and other codes. The `no_std` tables
 are generated ahead of time, so building koine runs no build script and
 reads no files.
 
-```
+```rust
 use koine::{Country, Language, Locale};
 
 let locale: Locale = "sv-se".parse().unwrap();

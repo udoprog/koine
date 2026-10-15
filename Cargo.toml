@@ -12,7 +12,7 @@ repository = "https://github.com/udoprog/koine"
 # from Unicode CLDR, which is Unicode-3.0. The terms of the ISO 639-3 data are
 # being confirmed with SIL; see "Data sources" in the README.
 license = "(MIT OR Apache-2.0) AND Unicode-3.0"
-keywords = ["iso639", "iso3166", "language", "country", "locale"]
+keywords = ["country", "iso3166", "iso639", "language", "locale"]
 categories = ["internationalization", "localization", "no-std", "wasm"]
 # What the library builds from, and the license of the CLDR data its tables
 # are generated from. The rest of data/ (notably the raw ISO 639-3 download,
