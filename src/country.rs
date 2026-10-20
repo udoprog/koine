@@ -144,7 +144,32 @@ define_code! {
     /// ```
     pub struct Country;
     /// Error produced when a string cannot be parsed as a [`Country`].
-    pub struct ParseCountryErr("invalid country code");
+    ///
+    /// [`kind`](ParseCountryErr::kind) says whether the code was unknown or
+    /// not a code at all:
+    ///
+    /// ```
+    /// use koine::Country;
+    /// use koine::country::ParseCountryErrKind;
+    ///
+    /// let err = "ZZ".parse::<Country>().unwrap_err();
+    /// assert_eq!(err.kind(), ParseCountryErrKind::Unknown);
+    /// assert_eq!(err.to_string(), "unknown country code");
+    ///
+    /// let err = "USA".parse::<Country>().unwrap_err();
+    /// assert_eq!(err.kind(), ParseCountryErrKind::Malformed);
+    /// assert_eq!(err.to_string(), "malformed country code");
+    /// ```
+    pub struct ParseCountryErr;
+    /// How a string failed to parse as a [`Country`], from
+    /// [`ParseCountryErr::kind`].
+    pub enum ParseCountryErrKind {
+        /// A 2-letter code that is not an assigned ISO 3166-1 alpha-2 code,
+        /// such as `"ZZ"`.
+        Unknown("unknown country code"),
+        /// Not a 2-letter code, such as `"USA"` or `"U1"`.
+        Malformed("malformed country code"),
+    }
     /// Build a country from its raw representation, in any case.
     ///
     /// If the input is not an ISO 3166-1 alpha-2 code in the table, returns
@@ -188,19 +213,29 @@ impl Country {
     /// assert_eq!(Country::from_iso(""), Some(Country::DEFAULT));
     /// assert_eq!(Country::from_iso("USA"), None);
     /// ```
+    #[inline]
     pub fn from_iso(code: &str) -> Option<Self> {
+        Self::parse(code).ok()
+    }
+
+    /// As [`Country::from_iso`], saying why on failure.
+    pub(crate) fn parse(code: &str) -> Result<Self, ParseCountryErr> {
         let code = code.trim();
 
         if code.is_empty() || code.eq_ignore_ascii_case("default") {
-            return Some(Self::DEFAULT);
+            return Ok(Self::DEFAULT);
         }
 
         let mut bytes = [0u8; 4];
-        let upper = Self::normalize(&mut bytes, code)?;
+
+        let Some(upper) = Self::normalize(&mut bytes, code) else {
+            return Err(ParseCountryErr::malformed());
+        };
 
         match *upper.as_bytes() {
-            [a, b] if is_valid_alpha2(&[a, b]) => Some(Self([a, b, 0, 0])),
-            _ => None,
+            [a, b] if is_valid_alpha2(&[a, b]) => Ok(Self([a, b, 0, 0])),
+            [_, _] => Err(ParseCountryErr::unknown()),
+            _ => Err(ParseCountryErr::malformed()),
         }
     }
 

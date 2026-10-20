@@ -210,14 +210,68 @@ pub struct Locale {
 }
 
 /// Error produced when a string cannot be parsed as a [`Locale`].
+///
+/// [`kind`](ParseLocaleErr::kind) says which part of the code was wrong:
+///
+/// ```
+/// use koine::Locale;
+/// use koine::locale::ParseLocaleErrKind;
+///
+/// let err = "zz-US".parse::<Locale>().unwrap_err();
+/// assert_eq!(err.kind(), ParseLocaleErrKind::UnknownLanguage);
+/// assert_eq!(err.to_string(), "unknown language in locale code");
+///
+/// let err = "en-ZZ".parse::<Locale>().unwrap_err();
+/// assert_eq!(err.kind(), ParseLocaleErrKind::UnknownCountry);
+/// assert_eq!(err.to_string(), "unknown country in locale code");
+///
+/// let err = "en_US".parse::<Locale>().unwrap_err();
+/// assert_eq!(err.kind(), ParseLocaleErrKind::Malformed);
+/// assert_eq!(err.to_string(), "malformed locale code");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
-pub struct ParseLocaleErr;
+pub struct ParseLocaleErr {
+    kind: ParseLocaleErrKind,
+}
+
+/// How a string failed to parse as a [`Locale`], from
+/// [`ParseLocaleErr::kind`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum ParseLocaleErrKind {
+    /// The language part is a 2- or 3-letter code that is not in the ISO 639
+    /// table, such as in `"zz-US"`.
+    UnknownLanguage,
+    /// The country part is a 2-letter code that is not an assigned
+    /// ISO 3166-1 alpha-2 code, such as in `"en-ZZ"`.
+    UnknownCountry,
+    /// Not of the form `language[-country]`, such as `"en_US"`, `"en-"`,
+    /// `"en-USA"` or `"default-US"`.
+    Malformed,
+}
+
+impl ParseLocaleErr {
+    /// Which part of the code was wrong.
+    #[inline]
+    pub const fn kind(&self) -> ParseLocaleErrKind {
+        self.kind
+    }
+
+    #[inline]
+    const fn new(kind: ParseLocaleErrKind) -> Self {
+        Self { kind }
+    }
+}
 
 impl fmt::Display for ParseLocaleErr {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("invalid locale code")
+        f.write_str(match self.kind {
+            ParseLocaleErrKind::UnknownLanguage => "unknown language in locale code",
+            ParseLocaleErrKind::UnknownCountry => "unknown country in locale code",
+            ParseLocaleErrKind::Malformed => "malformed locale code",
+        })
     }
 }
 
@@ -408,11 +462,22 @@ impl Locale {
     /// assert_eq!(Locale::from_iso("en-default"), None);
     /// assert_eq!(Locale::from_iso("en-ZZ"), None);
     /// ```
+    #[inline]
     pub fn from_iso(code: &str) -> Option<Self> {
+        Self::parse(code).ok()
+    }
+
+    /// As [`Locale::from_iso`], saying which part was wrong on failure.
+    fn parse(code: &str) -> Result<Self, ParseLocaleErr> {
+        use crate::country::ParseCountryErrKind;
+        use crate::language::ParseLanguageErrKind;
+
+        const MALFORMED: ParseLocaleErr = ParseLocaleErr::new(ParseLocaleErrKind::Malformed);
+
         let code = code.trim();
 
         if code.is_empty() || code.eq_ignore_ascii_case("default") {
-            return Some(Self::DEFAULT);
+            return Ok(Self::DEFAULT);
         }
 
         let (language, country) = match code.split_once('-') {
@@ -420,26 +485,26 @@ impl Locale {
             None => (code, None),
         };
 
-        let language = Language::from_iso(language)?;
-
-        if language.is_default() {
-            return None;
-        }
-
-        let country = match country {
-            Some(country) => {
-                let country = Country::from_iso(country)?;
-
-                if country.is_default() {
-                    return None;
-                }
-
-                country
+        let language = match Language::parse(language) {
+            Ok(language) if language.is_default() => return Err(MALFORMED),
+            Ok(language) => language,
+            Err(e) if e.kind() == ParseLanguageErrKind::Unknown => {
+                return Err(ParseLocaleErr::new(ParseLocaleErrKind::UnknownLanguage));
             }
-            None => Country::DEFAULT,
+            Err(_) => return Err(MALFORMED),
         };
 
-        Some(Self { language, country })
+        let country = match country.map(Country::parse) {
+            None => Country::DEFAULT,
+            Some(Ok(country)) if country.is_default() => return Err(MALFORMED),
+            Some(Ok(country)) => country,
+            Some(Err(e)) if e.kind() == ParseCountryErrKind::Unknown => {
+                return Err(ParseLocaleErr::new(ParseLocaleErrKind::UnknownCountry));
+            }
+            Some(Err(_)) => return Err(MALFORMED),
+        };
+
+        Ok(Self { language, country })
     }
 
     /// Build from a `language[-country]` ISO code (case-insensitive), like
@@ -497,7 +562,7 @@ impl FromStr for Locale {
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_iso(s).ok_or(ParseLocaleErr)
+        Self::parse(s)
     }
 }
 
@@ -724,6 +789,63 @@ mod tests {
             assert!(locale.is_listed(), "{entry:?}");
             assert_eq!(locale.to_string().parse::<Locale>(), Ok(locale));
             assert_eq!(Locale::from_u64(locale.to_u64()), locale);
+        }
+    }
+
+    #[test]
+    fn parse_errors_say_which_part_failed() {
+        use ParseLocaleErrKind::*;
+
+        let cases = [
+            ("zz", UnknownLanguage),
+            ("zz-US", UnknownLanguage),
+            ("zzz-US", UnknownLanguage),
+            ("zz-USA", UnknownLanguage),
+            ("en-ZZ", UnknownCountry),
+            ("eng-zz", UnknownCountry),
+            ("en_US", Malformed),
+            ("en-", Malformed),
+            ("-US", Malformed),
+            ("en-default", Malformed),
+            ("default-US", Malformed),
+            ("en-USA", Malformed),
+            ("en-US-x", Malformed),
+            ("e", Malformed),
+            ("english", Malformed),
+            ("e1-US", Malformed),
+        ];
+
+        for (input, kind) in cases {
+            let err = input.parse::<Locale>().unwrap_err();
+            assert_eq!(err.kind(), kind, "{input}");
+            assert_eq!(Locale::from_iso(input), None, "{input}");
+        }
+    }
+
+    #[test]
+    fn code_parse_errors_say_unknown_or_malformed() {
+        use crate::country::ParseCountryErrKind;
+        use crate::language::ParseLanguageErrKind;
+
+        for (input, kind) in [
+            ("zz", ParseLanguageErrKind::Unknown),
+            ("zzz", ParseLanguageErrKind::Unknown),
+            ("e", ParseLanguageErrKind::Malformed),
+            ("engl", ParseLanguageErrKind::Malformed),
+            ("e1", ParseLanguageErrKind::Malformed),
+        ] {
+            let err = input.parse::<Language>().unwrap_err();
+            assert_eq!(err.kind(), kind, "{input}");
+        }
+
+        for (input, kind) in [
+            ("ZZ", ParseCountryErrKind::Unknown),
+            ("U", ParseCountryErrKind::Malformed),
+            ("USA", ParseCountryErrKind::Malformed),
+            ("U1", ParseCountryErrKind::Malformed),
+        ] {
+            let err = input.parse::<Country>().unwrap_err();
+            assert_eq!(err.kind(), kind, "{input}");
         }
     }
 

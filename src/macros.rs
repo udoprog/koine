@@ -1,7 +1,7 @@
 /// Define a code type stored as up to four ASCII letters padded with `0`,
 /// where the all-zero value is the `DEFAULT` sentinel.
 ///
-/// The defining module provides `from_iso`, which `FromStr`, serde and musli
+/// The defining module provides `parse`, which `FromStr`, serde and musli
 /// decoding parse through, and a `Debug` implementation.
 #[allow(unused_macros)]
 macro_rules! define_code {
@@ -9,7 +9,14 @@ macro_rules! define_code {
         $(#[$meta:meta])*
         pub struct $name:ident;
         $(#[$err_meta:meta])*
-        pub struct $err:ident($err_msg:literal);
+        pub struct $err:ident;
+        $(#[$kind_meta:meta])*
+        pub enum $kind:ident {
+            $(#[$unknown_meta:meta])*
+            Unknown($unknown_msg:literal),
+            $(#[$malformed_meta:meta])*
+            Malformed($malformed_msg:literal),
+        }
         $(#[$new_meta:meta])*
         const fn new valid by $valid:path;
         case $to_case:ident, $is_case:ident;
@@ -28,12 +35,45 @@ macro_rules! define_code {
         $(#[$err_meta])*
         #[derive(Debug, Clone, PartialEq, Eq)]
         #[non_exhaustive]
-        pub struct $err;
+        pub struct $err {
+            kind: $kind,
+        }
+
+        $(#[$kind_meta])*
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        #[non_exhaustive]
+        pub enum $kind {
+            $(#[$unknown_meta])*
+            Unknown,
+            $(#[$malformed_meta])*
+            Malformed,
+        }
+
+        impl $err {
+            /// Which way the input was wrong.
+            #[inline]
+            pub const fn kind(&self) -> $kind {
+                self.kind
+            }
+
+            #[inline]
+            const fn unknown() -> Self {
+                Self { kind: $kind::Unknown }
+            }
+
+            #[inline]
+            const fn malformed() -> Self {
+                Self { kind: $kind::Malformed }
+            }
+        }
 
         impl ::core::fmt::Display for $err {
             #[inline]
             fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                f.write_str($err_msg)
+                f.write_str(match self.kind {
+                    $kind::Unknown => $unknown_msg,
+                    $kind::Malformed => $malformed_msg,
+                })
             }
         }
 
@@ -187,7 +227,7 @@ macro_rules! define_code {
 
             #[inline]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Self::from_iso(s).ok_or($err)
+                Self::parse(s)
             }
         }
 

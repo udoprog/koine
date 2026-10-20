@@ -180,7 +180,32 @@ define_code! {
     /// ```
     pub struct Language;
     /// Error produced when a string cannot be parsed as a [`Language`].
-    pub struct ParseLanguageErr("invalid language code");
+    ///
+    /// [`kind`](ParseLanguageErr::kind) says whether the code was unknown or
+    /// not a code at all:
+    ///
+    /// ```
+    /// use koine::Language;
+    /// use koine::language::ParseLanguageErrKind;
+    ///
+    /// let err = "zz".parse::<Language>().unwrap_err();
+    /// assert_eq!(err.kind(), ParseLanguageErrKind::Unknown);
+    /// assert_eq!(err.to_string(), "unknown language code");
+    ///
+    /// let err = "english".parse::<Language>().unwrap_err();
+    /// assert_eq!(err.kind(), ParseLanguageErrKind::Malformed);
+    /// assert_eq!(err.to_string(), "malformed language code");
+    /// ```
+    pub struct ParseLanguageErr;
+    /// How a string failed to parse as a [`Language`], from
+    /// [`ParseLanguageErr::kind`].
+    pub enum ParseLanguageErrKind {
+        /// A 2- or 3-letter code that is not in the ISO 639 table, such as
+        /// `"zz"`.
+        Unknown("unknown language code"),
+        /// Not a 2- or 3-letter code, such as `"english"` or `"e1"`.
+        Malformed("malformed language code"),
+    }
     /// Build a language from its raw representation, in any case.
     ///
     /// If the input is not an ISO 639-3 code in the table, returns
@@ -226,29 +251,39 @@ impl Language {
     /// assert_eq!(Language::from_iso(""), Some(Language::DEFAULT));
     /// assert_eq!(Language::from_iso("english"), None);
     /// ```
+    #[inline]
     pub fn from_iso(code: &str) -> Option<Self> {
+        Self::parse(code).ok()
+    }
+
+    /// As [`Language::from_iso`], saying why on failure.
+    pub(crate) fn parse(code: &str) -> Result<Self, ParseLanguageErr> {
         let code = code.trim();
 
         if code.is_empty() || code.eq_ignore_ascii_case("default") {
-            return Some(Self::DEFAULT);
+            return Ok(Self::DEFAULT);
         }
 
         let mut bytes = [0u8; 4];
-        let lower = Self::normalize(&mut bytes, code)?;
+
+        let Some(lower) = Self::normalize(&mut bytes, code) else {
+            return Err(ParseLanguageErr::malformed());
+        };
 
         let bytes = match lower.len() {
             2 => {
-                let &[a, b, c] = by_part1(lower)?.id.as_bytes() else {
-                    return None;
+                let Some(&[a, b, c]) = by_part1(lower).map(|e| e.id.as_bytes()) else {
+                    return Err(ParseLanguageErr::unknown());
                 };
 
                 [a, b, c, 0]
             }
             3 if is_valid_id(lower.as_bytes()) => bytes,
-            _ => return None,
+            3 => return Err(ParseLanguageErr::unknown()),
+            _ => return Err(ParseLanguageErr::malformed()),
         };
 
-        Some(Self(bytes))
+        Ok(Self(bytes))
     }
 
     /// Build from a 2- or 3-letter ISO 639 code (case-insensitive), like

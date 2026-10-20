@@ -23,7 +23,11 @@ fn serde_uses_the_string_form() {
         serde_json::from_str::<Language>(r#""en""#).unwrap(),
         Language::ENG
     );
-    assert!(serde_json::from_str::<Locale>(r#""en-ZZ""#).is_err());
+    let err = serde_json::from_str::<Locale>(r#""en-ZZ""#).unwrap_err();
+    assert!(
+        err.to_string().contains("unknown country in locale code"),
+        "{err}"
+    );
 }
 
 #[cfg(feature = "musli01")]
