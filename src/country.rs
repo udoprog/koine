@@ -270,6 +270,8 @@ impl Country {
     }
 }
 
+/// Formats as `Country(GB)`, naming the type around the stored code.
+/// [`Country::DEFAULT`] shows its stored form, `Country(default)`.
 impl fmt::Debug for Country {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -336,6 +338,12 @@ impl From<Country> for yew023::virtual_dom::Key {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn debug_names_the_type() {
+        assert_eq!(alloc::format!("{:?}", Country::US), "Country(US)");
+        assert_eq!(alloc::format!("{:?}", Country::DEFAULT), "Country(default)");
+    }
+
     use alloc::string::ToString;
 
     use super::*;

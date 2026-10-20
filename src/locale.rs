@@ -550,10 +550,12 @@ impl fmt::Display for Locale {
     }
 }
 
+/// Formats as `Locale(en-US)`, naming the type around the display form.
+/// [`Locale::DEFAULT`] shows `Locale(default)`.
 impl fmt::Debug for Locale {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        write!(f, "Locale({self})")
     }
 }
 
@@ -740,6 +742,13 @@ impl yew023::html::IntoPropValue<Option<yew023::AttrValue>> for Locale {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn debug_names_the_type() {
+        let en_us = Locale::new(Language::ENG, Country::US);
+        assert_eq!(alloc::format!("{en_us:?}"), "Locale(en-US)");
+        assert_eq!(alloc::format!("{:?}", Locale::DEFAULT), "Locale(default)");
+    }
+
     use alloc::string::ToString;
 
     use super::*;

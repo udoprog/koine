@@ -342,10 +342,12 @@ impl Language {
     }
 }
 
+/// Formats as `Language(eng)`, naming the type around the stored code.
+/// [`Language::DEFAULT`] shows its stored form, `Language(default)`.
 impl fmt::Debug for Language {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        write!(f, "Language({self})")
     }
 }
 
@@ -388,6 +390,15 @@ impl PartialEq<&'static Entry> for Language {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn debug_names_the_type() {
+        assert_eq!(alloc::format!("{:?}", Language::ENG), "Language(eng)");
+        assert_eq!(
+            alloc::format!("{:?}", Language::DEFAULT),
+            "Language(default)"
+        );
+    }
+
     use alloc::string::ToString;
 
     use super::*;
