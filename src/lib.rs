@@ -56,7 +56,7 @@
 //! | `locale` | [`locale`] | [`Locale`] and the table of valid language+country combinations (implies `language` and `country`) |
 //! | `serde` | | serde `Serialize` and `Deserialize` as the string forms |
 //! | `musli01` | | musli 0.1 `Encode` and `Decode` as the string forms |
-//! | `sqll014` | | sqll 0.14 `FromColumn` and `BindValue`, as a stable integer: the code's bytes big-endian for [`Language`] (`eng` is `0x656e6700`) and [`Country`] (`US` is `0x55530000`), [`Locale::to_u64`] for [`Locale`], and `0` for `DEFAULT`. A well-formed code missing from the tables reads back unchanged |
+//! | `sqll014` | | Needs the Rust version sqll 0.14 needs, which is newer than koine's own. sqll 0.14 `FromColumn` and `BindValue`, as a stable integer: the code's bytes big-endian for [`Language`] (`eng` is `0x656e6700`) and [`Country`] (`US` is `0x55530000`), [`Locale::to_u64`] for [`Locale`], and `0` for `DEFAULT`. A well-formed code missing from the tables reads back unchanged |
 //! | `yew023` | | yew 0.23 `IntoPropValue<VNode>` for all three, `IntoPropValue<Option<AttrValue>>` for [`Country`] (its name) and [`Locale`] (its code), and `From<Country>` for `Key` (implies `alloc`) |
 //!
 //! With `default-features = false`, a crate names every feature it needs,

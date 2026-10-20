@@ -35,7 +35,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@1.88
-    - run: cargo build -p koine --all-features
+    # Every feature but sqll014: sqll sets its own, higher minimum Rust version.
+    - run: cargo build -p koine --features serde,musli01,yew023
 
   # Each feature is checked alone, because a feature that only compiles
   # alongside another breaks the crates that take it alone. Without default
