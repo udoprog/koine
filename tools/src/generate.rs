@@ -130,8 +130,9 @@ struct FlagRow {
     iso_3166_1: String,
 }
 
-/// Generate `src/language/generated.rs`: `is_valid_id`, the `ENTRIES` table
-/// and its `BY_ID` and `BY_PART1` indexes.
+/// Generate `src/language/generated.rs`: `is_valid_id`, the `ENTRIES` table,
+/// the distinct `FLAGS` in alpha-2 order, and the `BY_ID` and `BY_PART1`
+/// indexes.
 ///
 /// Each entry's `flag` comes from the `to_3166` mapping, kept only when it
 /// names a country in `valid_countries` (the ISO 3166-1 table this crate
@@ -215,6 +216,7 @@ fn write_entries(
     flags3: &BTreeMap<String, String>,
 ) -> Result<Vec<Mapping>> {
     let mut mapping = Vec::new();
+    let mut flags = BTreeSet::new();
 
     writeln!(out, "pub(super) const ENTRIES: &[Entry] = &[")?;
 
@@ -243,6 +245,8 @@ fn write_entries(
             flag: flag.map(str::to_owned),
         });
 
+        flags.extend(flag3);
+
         writeln!(out, "    Entry {{")?;
         writeln!(out, "        id: {:?},", row.id)?;
         writeln!(out, "        part2b: {},", optional(row.part2b.as_deref()))?;
@@ -258,6 +262,15 @@ fn write_entries(
             optional(row.comment.as_deref())
         )?;
         writeln!(out, "    }},")?;
+    }
+
+    writeln!(out, "];")?;
+    writeln!(out)?;
+
+    writeln!(out, "pub(super) const FLAGS: &[&str] = &[")?;
+
+    for flag in flags {
+        writeln!(out, "    {flag:?},")?;
     }
 
     writeln!(out, "];")?;

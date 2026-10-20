@@ -138,6 +138,26 @@ pub fn iter() -> impl ExactSizeIterator<Item = &'static Entry> {
     ENTRIES.iter()
 }
 
+/// Iterate over each distinct [`Entry::flag`] country once, as uppercase
+/// ISO 3166-1 alpha-2 codes in alphabetical order.
+///
+/// These are the flags an app needs to draw every language that has one.
+///
+/// ```
+/// let flags: Vec<_> = koine::language::flags().collect();
+/// assert!(flags.contains(&"US"));
+/// assert!(flags.is_sorted());
+///
+/// for language in koine::language::iter() {
+///     if let Some(flag) = language.flag {
+///         assert!(flags.contains(&flag));
+///     }
+/// }
+/// ```
+pub fn flags() -> impl ExactSizeIterator<Item = &'static str> {
+    generated::FLAGS.iter().copied()
+}
+
 define_code! {
     /// A language identified by its 3-letter ISO 639-3 code, stored as four
     /// bytes: the three ASCII letters followed by a `0` pad.
@@ -336,6 +356,14 @@ mod tests {
     use alloc::string::ToString;
 
     use super::*;
+
+    /// `flags` is every distinct entry flag once, in alphabetical order.
+    #[test]
+    fn flags_are_the_distinct_entry_flags() {
+        let expected: alloc::collections::BTreeSet<_> =
+            ENTRIES.iter().filter_map(|e| e.flag).collect();
+        assert!(flags().eq(expected));
+    }
 
     /// Every language with an ISO 639-1 code has a flag in the mapping, which
     /// is what keeps `to-3166.csv` complete when SIL adds one.

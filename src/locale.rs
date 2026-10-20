@@ -117,6 +117,48 @@ pub fn iter() -> impl ExactSizeIterator<Item = &'static Entry> {
     ENTRIES.iter()
 }
 
+/// Iterate over the combinations of the given language, ordered by country.
+///
+/// Yields nothing for [`Language::DEFAULT`] and for a language that has no
+/// locale in the table.
+///
+/// ```
+/// use koine::{Country, Language};
+///
+/// let portuguese = Language::new(b"por");
+/// assert!(koine::locale::by_language(portuguese).any(|l| l.to_country() == Country::new(b"BR")));
+/// assert!(koine::locale::by_language(portuguese).all(|l| l.to_language() == portuguese));
+///
+/// assert_eq!(koine::locale::by_language(Language::UND).len(), 0);
+/// ```
+pub fn by_language(language: Language) -> impl ExactSizeIterator<Item = &'static Entry> {
+    // The table is ordered by language code, which orders the same as the
+    // code's raw bytes.
+    let start = ENTRIES.partition_point(|e| e.to_language() < language);
+    let len = ENTRIES[start..].partition_point(|e| e.to_language() == language);
+    ENTRIES[start..start + len].iter()
+}
+
+/// Iterate over the combinations of the given country, ordered by language.
+///
+/// Yields nothing for [`Country::DEFAULT`] and for a country that has no
+/// locale in the table.
+///
+/// ```
+/// use koine::{Country, Language};
+///
+/// let languages: Vec<Language> = koine::locale::by_country(Country::new(b"CH"))
+///     .map(|l| l.to_language())
+///     .collect();
+///
+/// assert!(languages.contains(&Language::new(b"deu")));
+/// assert!(languages.contains(&Language::new(b"fra")));
+/// assert_eq!(koine::locale::by_country(Country::DEFAULT).count(), 0);
+/// ```
+pub fn by_country(country: Country) -> impl Iterator<Item = &'static Entry> {
+    ENTRIES.iter().filter(move |e| e.to_country() == country)
+}
+
 /// Whether the given ISO 639-3 code and uppercase ISO 3166-1 alpha-2 code are
 /// a valid combination.
 ///
@@ -636,6 +678,36 @@ mod tests {
     use alloc::string::ToString;
 
     use super::*;
+
+    /// The table is sorted by language then country, which `by_language`'s
+    /// binary search relies on.
+    #[test]
+    fn table_is_sorted_by_language_then_country() {
+        assert!(ENTRIES.is_sorted_by_key(|e| (e.language, e.country)));
+        assert!(ENTRIES.is_sorted_by_key(|e| (e.to_language(), e.to_country())));
+    }
+
+    #[test]
+    fn by_language_matches_a_full_scan() {
+        for language in crate::language::iter().map(|e| e.to_language()) {
+            let found = by_language(language);
+            let expected = ENTRIES.iter().filter(|e| e.to_language() == language);
+            assert_eq!(found.len(), expected.clone().count(), "{language:?}");
+            assert!(found.eq(expected), "{language:?}");
+        }
+
+        assert_eq!(by_language(Language::DEFAULT).len(), 0);
+    }
+
+    #[test]
+    fn by_country_matches_a_full_scan() {
+        for country in crate::country::iter().map(|e| e.to_country()) {
+            let expected = ENTRIES.iter().filter(|e| e.country == country.as_str());
+            assert!(by_country(country).eq(expected), "{country:?}");
+        }
+
+        assert_eq!(by_country(Country::DEFAULT).count(), 0);
+    }
 
     #[test]
     fn every_entry_is_a_listed_locale() {
