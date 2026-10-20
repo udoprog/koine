@@ -268,6 +268,19 @@ impl Country {
 
         by_alpha2(self.as_raw_code())
     }
+
+    /// The English name, as CLDR spells it, or `None` for
+    /// [`Country::DEFAULT`].
+    ///
+    /// ```
+    /// use koine::Country;
+    ///
+    /// assert_eq!(Country::US.name(), Some("United States"));
+    /// assert_eq!(Country::DEFAULT.name(), None);
+    /// ```
+    pub fn name(&self) -> Option<&'static str> {
+        Some(self.to_iso()?.name)
+    }
 }
 
 /// Formats as `Country(GB)`, naming the type around the stored code.

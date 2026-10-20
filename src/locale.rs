@@ -191,9 +191,11 @@ pub fn contains(language: &str, country: &str) -> bool {
 /// A locale: a [`Language`] and an optional [`Country`], for example `en-US`,
 /// `pt-BR` or a bare `en`.
 ///
-/// It displays as the language's ISO 639-1 code where it has one (its
-/// ISO 639-3 code otherwise), followed by `-` and the country when one is
-/// set, and parses from that form with either language code.
+/// It displays as the language's [`Language::to_tag`], its ISO 639-1 code
+/// where it has one and its ISO 639-3 code otherwise, followed by `-` and
+/// the country when one is set, and parses from that form with either
+/// language code. [`Locale::display_name`] renders its English name
+/// instead, such as `English (United States)`.
 ///
 /// The 64-bit integer form ([`Locale::to_u64`]) keeps the language in the
 /// low 32 bits and the country in the high 32 bits, so a value whose high
@@ -529,6 +531,49 @@ impl Locale {
     pub fn from_code(code: &str) -> Option<Self> {
         Self::from_iso(code).filter(|locale| !locale.is_default())
     }
+
+    /// The English name of this locale for display: the language's
+    /// [name](Language::name), followed by the country's
+    /// [name](Country::name) in parentheses when one is set. A code missing
+    /// from its table shows as the code, and [`Locale::DEFAULT`] as
+    /// `"default"`, as in its string form.
+    ///
+    /// It writes straight to the formatter, so it needs no allocation.
+    ///
+    /// ```
+    /// use koine::{Country, Language, Locale};
+    ///
+    /// assert_eq!(Locale::EN_US.display_name().to_string(), "English (United States)");
+    /// assert_eq!(Locale::new(Language::ENG, Country::DEFAULT).display_name().to_string(), "English");
+    /// assert_eq!(Locale::DEFAULT.display_name().to_string(), "default");
+    /// ```
+    #[inline]
+    pub fn display_name(&self) -> impl fmt::Display + use<> {
+        DisplayName(*self)
+    }
+}
+
+/// The [`Locale::display_name`] of a locale.
+struct DisplayName(Locale);
+
+impl fmt::Display for DisplayName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Locale { language, country } = self.0;
+
+        if language.is_default() {
+            return f.write_str("default");
+        }
+
+        f.write_str(language.name().unwrap_or(language.as_str()))?;
+
+        if !country.is_default() {
+            f.write_str(" (")?;
+            f.write_str(country.name().unwrap_or(country.as_str()))?;
+            f.write_str(")")?;
+        }
+
+        Ok(())
+    }
 }
 
 impl fmt::Display for Locale {
@@ -537,8 +582,8 @@ impl fmt::Display for Locale {
             return f.write_str("default");
         }
 
-        match self.language.to_part1() {
-            Some(part1) => f.write_str(part1)?,
+        match self.language.to_tag() {
+            Some(tag) => f.write_str(tag)?,
             None => f.write_str(self.language.as_str())?,
         }
 
@@ -856,6 +901,20 @@ mod tests {
             let err = input.parse::<Country>().unwrap_err();
             assert_eq!(err.kind(), kind, "{input}");
         }
+    }
+
+    #[test]
+    fn display_name_falls_back_to_codes() {
+        // "qqq" and "QQ" are well formed but in neither table.
+        let locale = Locale::from_u64_lossless(0x5151_0000_7171_7100).unwrap();
+        assert_eq!(locale.to_string(), "qqq-QQ");
+        assert_eq!(locale.display_name().to_string(), "qqq (QQ)");
+
+        let locale = Locale::new(
+            Language::new(b"swe"),
+            Country::from_raw_unchecked(*b"QQ\0\0"),
+        );
+        assert_eq!(locale.display_name().to_string(), "Swedish (QQ)");
     }
 
     #[test]

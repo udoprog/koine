@@ -340,6 +340,35 @@ impl Language {
     pub fn to_part1(&self) -> Option<&'static str> {
         self.to_iso()?.part1
     }
+
+    /// The short code a [`Locale`](crate::Locale) is written with: the
+    /// 2-letter ISO 639-1 code where there is one, else the 3-letter ISO 639-3
+    /// code, as BCP 47 language tags use. `None` for [`Language::DEFAULT`].
+    ///
+    /// ```
+    /// use koine::Language;
+    ///
+    /// assert_eq!(Language::ENG.to_tag(), Some("en"));
+    /// assert_eq!(Language::new(b"fil").to_tag(), Some("fil"));
+    /// assert_eq!(Language::DEFAULT.to_tag(), None);
+    /// ```
+    pub fn to_tag(&self) -> Option<&'static str> {
+        let entry = self.to_iso()?;
+        Some(entry.part1.unwrap_or(entry.id))
+    }
+
+    /// The English reference name, or `None` for [`Language::DEFAULT`].
+    ///
+    /// ```
+    /// use koine::Language;
+    ///
+    /// assert_eq!(Language::ENG.name(), Some("English"));
+    /// assert_eq!(Language::new(b"swe").name(), Some("Swedish"));
+    /// assert_eq!(Language::DEFAULT.name(), None);
+    /// ```
+    pub fn name(&self) -> Option<&'static str> {
+        Some(self.to_iso()?.name)
+    }
 }
 
 /// Formats as `Language(eng)`, naming the type around the stored code.
