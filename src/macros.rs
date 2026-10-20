@@ -102,6 +102,14 @@ macro_rules! define_code {
                 Some(Self(bytes))
             }
 
+            /// Build from raw bytes known to be a valid code, as the tables
+            /// hold, without checking them.
+            #[inline]
+            #[allow(dead_code)]
+            pub(crate) const fn from_raw_unchecked(bytes: [u8; 4]) -> Self {
+                Self(bytes)
+            }
+
             /// The raw byte-wise representation: the code's ASCII letters
             /// padded with `0`, all zero for `DEFAULT`.
             #[inline]

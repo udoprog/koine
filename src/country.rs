@@ -219,6 +219,36 @@ impl fmt::Debug for Country {
     }
 }
 
+impl Entry {
+    /// The [`Country`] of this entry, never [`Country::DEFAULT`].
+    ///
+    /// Every entry in the table holds a valid alpha-2 code, so unlike parsing
+    /// [`Entry::alpha2`] this cannot fail.
+    ///
+    /// ```
+    /// use koine::Country;
+    ///
+    /// let us = koine::country::by_alpha3("USA").unwrap();
+    /// assert_eq!(us.to_country(), Country::US);
+    /// assert_eq!(Country::from(us), Country::US);
+    /// ```
+    #[inline]
+    pub const fn to_country(&self) -> Country {
+        match *self.alpha2.as_bytes() {
+            [a, b] => Country::from_raw_unchecked([a, b, 0, 0]),
+            _ => Country::DEFAULT,
+        }
+    }
+}
+
+impl From<&Entry> for Country {
+    /// The entry's country, as [`Entry::to_country`].
+    #[inline]
+    fn from(entry: &Entry) -> Self {
+        entry.to_country()
+    }
+}
+
 impl PartialEq<&'static Entry> for Country {
     #[inline]
     fn eq(&self, other: &&'static Entry) -> bool {
@@ -255,8 +285,11 @@ mod tests {
     #[test]
     fn every_country_round_trips() {
         for entry in iter() {
-            let country = Country::new(entry.alpha2.as_bytes());
+            let country = entry.to_country();
+            assert!(!country.is_default(), "{entry:?}");
+            assert_eq!(country, Country::new(entry.alpha2.as_bytes()));
             assert_eq!(country, entry);
+            assert_eq!(country.to_iso(), Some(entry));
             assert_eq!(country.to_string().parse::<Country>(), Ok(country));
             assert_eq!(by_alpha3(entry.alpha3), Some(entry));
             assert_eq!(by_numeric(entry.numeric), Some(entry));

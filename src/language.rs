@@ -270,6 +270,36 @@ impl fmt::Debug for Language {
     }
 }
 
+impl Entry {
+    /// The [`Language`] of this entry, never [`Language::DEFAULT`].
+    ///
+    /// Every entry in the table holds a valid ISO 639-3 code, so unlike
+    /// parsing [`Entry::id`] this cannot fail.
+    ///
+    /// ```
+    /// use koine::Language;
+    ///
+    /// let english = koine::language::by_id("eng").unwrap();
+    /// assert_eq!(english.to_language(), Language::ENG);
+    /// assert_eq!(Language::from(english), Language::ENG);
+    /// ```
+    #[inline]
+    pub const fn to_language(&self) -> Language {
+        match *self.id.as_bytes() {
+            [a, b, c] => Language::from_raw_unchecked([a, b, c, 0]),
+            _ => Language::DEFAULT,
+        }
+    }
+}
+
+impl From<&Entry> for Language {
+    /// The entry's language, as [`Entry::to_language`].
+    #[inline]
+    fn from(entry: &Entry) -> Self {
+        entry.to_language()
+    }
+}
+
 impl PartialEq<&'static Entry> for Language {
     #[inline]
     fn eq(&self, other: &&'static Entry) -> bool {
@@ -316,9 +346,20 @@ mod tests {
     }
 
     #[test]
+    fn every_entry_is_its_language() {
+        for entry in iter() {
+            let language = entry.to_language();
+            assert!(!language.is_default(), "{entry:?}");
+            assert_eq!(language, Language::new(entry.id.as_bytes()));
+            assert_eq!(language, entry);
+            assert_eq!(language.to_iso(), Some(entry));
+        }
+    }
+
+    #[test]
     fn round_trips_through_its_string() {
         for entry in iter().step_by(97) {
-            let language = Language::new(entry.id.as_bytes());
+            let language = entry.to_language();
             assert_eq!(language.as_str(), entry.id);
             assert_eq!(language.to_string().parse::<Language>(), Ok(language));
         }

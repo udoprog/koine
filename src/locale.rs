@@ -39,6 +39,71 @@ pub struct Entry {
     pub country: &'static str,
 }
 
+impl Entry {
+    /// The [`Language`] of this entry, never [`Language::DEFAULT`].
+    ///
+    /// Every entry in the table holds a valid ISO 639-3 code, so unlike
+    /// parsing [`Entry::language`](#structfield.language) this cannot fail.
+    ///
+    /// ```
+    /// use koine::Language;
+    ///
+    /// let entry = koine::locale::iter().find(|l| l.language == "eng").unwrap();
+    /// assert_eq!(entry.to_language(), Language::ENG);
+    /// ```
+    #[inline]
+    pub const fn to_language(&self) -> Language {
+        match *self.language.as_bytes() {
+            [a, b, c] => Language::from_raw_unchecked([a, b, c, 0]),
+            _ => Language::DEFAULT,
+        }
+    }
+
+    /// The [`Country`] of this entry, never [`Country::DEFAULT`].
+    ///
+    /// Every entry in the table holds a valid alpha-2 code, so unlike parsing
+    /// [`Entry::country`](#structfield.country) this cannot fail.
+    ///
+    /// ```
+    /// use koine::Country;
+    ///
+    /// let entry = koine::locale::iter().find(|l| l.country == "US").unwrap();
+    /// assert_eq!(entry.to_country(), Country::US);
+    /// ```
+    #[inline]
+    pub const fn to_country(&self) -> Country {
+        match *self.country.as_bytes() {
+            [a, b] => Country::from_raw_unchecked([a, b, 0, 0]),
+            _ => Country::DEFAULT,
+        }
+    }
+
+    /// The [`Locale`] of this entry: its language and country, always
+    /// [listed](Locale::is_listed).
+    ///
+    /// ```
+    /// use koine::Locale;
+    ///
+    /// let entry = koine::locale::iter()
+    ///     .find(|l| l.language == "eng" && l.country == "US")
+    ///     .unwrap();
+    /// assert_eq!(entry.to_locale(), Locale::EN_US);
+    /// assert_eq!(Locale::from(entry), Locale::EN_US);
+    /// ```
+    #[inline]
+    pub const fn to_locale(&self) -> Locale {
+        Locale::new(self.to_language(), self.to_country())
+    }
+}
+
+impl From<&Entry> for Locale {
+    /// The entry's locale, as [`Entry::to_locale`].
+    #[inline]
+    fn from(entry: &Entry) -> Self {
+        entry.to_locale()
+    }
+}
+
 #[rustfmt::skip]
 mod generated;
 use generated::ENTRIES;
@@ -548,12 +613,15 @@ mod tests {
     #[test]
     fn every_entry_is_a_listed_locale() {
         for entry in iter() {
-            let language = Language::new(entry.language.as_bytes());
-            let country = Country::new(entry.country.as_bytes());
+            let language = entry.to_language();
+            let country = entry.to_country();
             assert!(!language.is_default(), "{entry:?}");
             assert!(!country.is_default(), "{entry:?}");
+            assert_eq!(language, Language::new(entry.language.as_bytes()));
+            assert_eq!(country, Country::new(entry.country.as_bytes()));
 
-            let locale = Locale::new(language, country);
+            let locale = entry.to_locale();
+            assert_eq!(locale, Locale::new(language, country));
             assert!(locale.is_listed(), "{entry:?}");
             assert_eq!(locale.to_string().parse::<Locale>(), Ok(locale));
             assert_eq!(Locale::from_u64(locale.to_u64()), locale);
