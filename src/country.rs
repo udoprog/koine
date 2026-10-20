@@ -177,6 +177,10 @@ impl Country {
     /// empty string or `"default"` maps to [`Country::DEFAULT`]. Returns
     /// `None` for anything else.
     ///
+    /// Use this to read back a stored or serialized value, where
+    /// `"default"` has to round-trip. For input that must name a real
+    /// country, such as user or browser input, use [`Country::from_code`].
+    ///
     /// ```
     /// use koine::Country;
     ///
@@ -198,6 +202,25 @@ impl Country {
             [a, b] if is_valid_alpha2(&[a, b]) => Some(Self([a, b, 0, 0])),
             _ => None,
         }
+    }
+
+    /// Build from a 2-letter ISO 3166-1 alpha-2 code (case-insensitive),
+    /// like [`Country::from_iso`], but never returns [`Country::DEFAULT`]:
+    /// an empty string or `"default"` gives `None`.
+    ///
+    /// Use this for input that must name a real country, such as user or
+    /// browser input.
+    ///
+    /// ```
+    /// use koine::Country;
+    ///
+    /// assert_eq!(Country::from_code("us"), Some(Country::US));
+    /// assert_eq!(Country::from_code(""), None);
+    /// assert_eq!(Country::from_code("default"), None);
+    /// assert_eq!(Country::from_code("USA"), None);
+    /// ```
+    pub fn from_code(code: &str) -> Option<Self> {
+        Self::from_iso(code).filter(|country| !country.is_default())
     }
 
     /// The table [`Entry`] for this country, or `None` for

@@ -194,6 +194,10 @@ impl Language {
     /// string or `"default"` maps to [`Language::DEFAULT`]. Returns `None` for
     /// anything else.
     ///
+    /// Use this to read back a stored or serialized value, where
+    /// `"default"` has to round-trip. For input that must name a real
+    /// language, such as user or browser input, use [`Language::from_code`].
+    ///
     /// ```
     /// use koine::Language;
     ///
@@ -225,6 +229,26 @@ impl Language {
         };
 
         Some(Self(bytes))
+    }
+
+    /// Build from a 2- or 3-letter ISO 639 code (case-insensitive), like
+    /// [`Language::from_iso`], but never returns [`Language::DEFAULT`]: an
+    /// empty string or `"default"` gives `None`.
+    ///
+    /// Use this for input that must name a real language, such as user or
+    /// browser input.
+    ///
+    /// ```
+    /// use koine::Language;
+    ///
+    /// assert_eq!(Language::from_code("en"), Some(Language::ENG));
+    /// assert_eq!(Language::from_code(" Eng "), Some(Language::ENG));
+    /// assert_eq!(Language::from_code(""), None);
+    /// assert_eq!(Language::from_code("default"), None);
+    /// assert_eq!(Language::from_code("english"), None);
+    /// ```
+    pub fn from_code(code: &str) -> Option<Self> {
+        Self::from_iso(code).filter(|language| !language.is_default())
     }
 
     /// The table [`Entry`] for this language, or `None` for

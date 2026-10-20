@@ -353,6 +353,10 @@ impl Locale {
     /// to [`Locale::DEFAULT`]. Returns `None` for anything else, including a
     /// language or country part of `"default"`.
     ///
+    /// Use this to read back a stored or serialized value, where
+    /// `"default"` has to round-trip. For input that must name a real
+    /// locale, such as user or browser input, use [`Locale::from_code`].
+    ///
     /// ```
     /// use koine::Locale;
     ///
@@ -394,6 +398,29 @@ impl Locale {
         };
 
         Some(Self { language, country })
+    }
+
+    /// Build from a `language[-country]` ISO code (case-insensitive), like
+    /// [`Locale::from_iso`], but never returns [`Locale::DEFAULT`]: an empty
+    /// string, `"default"` and a language or country part of `"default"` all
+    /// give `None`.
+    ///
+    /// Use this for input that must name a real locale, such as user or
+    /// browser input.
+    ///
+    /// ```
+    /// use koine::{Country, Language, Locale};
+    ///
+    /// assert_eq!(Locale::from_code("en-us"), Some(Locale::EN_US));
+    /// assert_eq!(Locale::from_code("en"), Some(Locale::new(Language::ENG, Country::DEFAULT)));
+    /// assert_eq!(Locale::from_code(""), None);
+    /// assert_eq!(Locale::from_code("default"), None);
+    /// assert_eq!(Locale::from_code("en-default"), None);
+    /// assert_eq!(Locale::from_code("default-US"), None);
+    /// assert_eq!(Locale::from_code("en-ZZ"), None);
+    /// ```
+    pub fn from_code(code: &str) -> Option<Self> {
+        Self::from_iso(code).filter(|locale| !locale.is_default())
     }
 }
 
