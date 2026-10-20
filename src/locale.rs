@@ -247,6 +247,42 @@ impl Locale {
         }
     }
 
+    /// Rebuild a locale from its 64-bit integer representation like
+    /// [`Locale::from_u64`], but keep a component that is missing from the
+    /// current tables as long as it is well formed: a lowercase language code
+    /// and an uppercase country code of up to four ASCII letters padded with
+    /// zero bytes, or zero. A code retired from the tables after it was stored
+    /// therefore reads back intact. Returns `None` if either component is
+    /// malformed.
+    ///
+    /// ```
+    /// use koine::{Country, Language, Locale};
+    ///
+    /// assert_eq!(Locale::from_u64_lossless(Locale::EN_US.to_u64()), Some(Locale::EN_US));
+    ///
+    /// // "qqq" and "QQ" are well formed but in neither table.
+    /// let value = 0x5151_0000_7171_7100;
+    /// assert_eq!(Locale::from_u64(value), Locale::DEFAULT);
+    /// let locale = Locale::from_u64_lossless(value).unwrap();
+    /// assert_eq!(locale.to_u64(), value);
+    /// assert_eq!(locale.to_string(), "qqq-QQ");
+    ///
+    /// // Not letters.
+    /// assert_eq!(Locale::from_u64_lossless(0x3132_3300), None);
+    /// ```
+    #[inline]
+    pub const fn from_u64_lossless(value: u64) -> Option<Self> {
+        let Some(language) = Language::from_raw_shape((value as u32).to_be_bytes()) else {
+            return None;
+        };
+
+        let Some(country) = Country::from_raw_shape(((value >> 32) as u32).to_be_bytes()) else {
+            return None;
+        };
+
+        Some(Self { language, country })
+    }
+
     /// Build from a `language[-country]` ISO code (case-insensitive), such as
     /// `"en-US"`, `"eng-US"` or `"en"`. An empty string or `"default"` maps
     /// to [`Locale::DEFAULT`]. Returns `None` for anything else, including a
@@ -453,7 +489,16 @@ impl sqll014::FromColumn<'_> for Locale {
         index: sqll014::ty::Integer,
     ) -> sqll014::Result<Self> {
         let value = i64::from_column(stmt, index)?;
-        Ok(Locale::from_u64(value.cast_unsigned()))
+
+        // Only the shape is checked, so that a code missing from the current
+        // tables still reads.
+        match Locale::from_u64_lossless(value.cast_unsigned()) {
+            Some(locale) => Ok(locale),
+            None => Err(sqll014::Error::new(
+                sqll014::Code::MISMATCH,
+                "invalid stored locale",
+            )),
+        }
     }
 }
 

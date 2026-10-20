@@ -73,6 +73,35 @@ macro_rules! define_code {
                 Self(out)
             }
 
+            /// Build from the raw representation checking only its shape:
+            /// letters in the stored case followed by zero padding, or all
+            /// zero for `DEFAULT`. A code missing from the current tables is
+            /// kept.
+            #[allow(dead_code)]
+            #[inline]
+            pub(crate) const fn from_raw_shape(bytes: [u8; 4]) -> Option<Self> {
+                let mut n = 0;
+
+                while n < bytes.len() && bytes[n] != 0 {
+                    // `as_raw_code` relies on the letters being ASCII.
+                    if !bytes[n].$is_case() {
+                        return None;
+                    }
+
+                    n += 1;
+                }
+
+                while n < bytes.len() {
+                    if bytes[n] != 0 {
+                        return None;
+                    }
+
+                    n += 1;
+                }
+
+                Some(Self(bytes))
+            }
+
             /// The raw byte-wise representation: the code's ASCII letters
             /// padded with `0`, all zero for `DEFAULT`.
             #[inline]
@@ -248,18 +277,12 @@ macro_rules! define_code {
             ) -> ::sqll014::Result<Self> {
                 let value = i64::from_column(stmt, index)?;
 
-                if let Ok(value) = u32::try_from(value) {
-                    let bytes = value.to_be_bytes();
-                    let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
-
-                    // Only the shape is checked, so that a code missing from
-                    // the current tables still reads; `as_raw_code` relies on
-                    // it being ASCII.
-                    if bytes[..end].iter().all(u8::$is_case)
-                        && bytes[end..].iter().all(|&b| b == 0)
-                    {
-                        return Ok($name(bytes));
-                    }
+                // Only the shape is checked, so that a code missing from the
+                // current tables still reads.
+                if let Ok(value) = u32::try_from(value)
+                    && let Some(code) = $name::from_raw_shape(value.to_be_bytes())
+                {
+                    return Ok(code);
                 }
 
                 Err(::sqll014::Error::new(::sqll014::Code::MISMATCH, $stored_msg))
