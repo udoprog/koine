@@ -20,6 +20,10 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - run: cargo test --workspace --all-targets
     - run: cargo test --workspace --all-features --all-targets
+    - run: cargo test -p koine --no-default-features --features language
+    - run: cargo test -p koine --no-default-features --features country
+    - run: cargo test -p koine --no-default-features --features locale
+    - run: cargo test -p koine --no-default-features --features alloc,locale
     - run: cargo test --workspace --all-features --doc
 
   # The committed tables match what the vendored data generates.

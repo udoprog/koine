@@ -14,6 +14,8 @@
 //! reads no files.
 //!
 //! ```
+//! # #[cfg(feature = "locale")]
+//! # {
 //! use koine::{Country, Language, Locale};
 //!
 //! let locale: Locale = "sv-se".parse().unwrap();
@@ -28,6 +30,7 @@
 //!
 //! let country = locale.country().to_iso().unwrap();
 //! assert_eq!(country.alpha3, "SWE");
+//! # }
 //! ```
 //!
 //! <br>
