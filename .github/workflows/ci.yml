@@ -38,7 +38,9 @@ jobs:
     - run: cargo build -p koine --all-features
 
   # Each feature is checked alone, because a feature that only compiles
-  # alongside another breaks the crates that take it alone.
+  # alongside another breaks the crates that take it alone. Without default
+  # features there is neither std nor alloc; the line without --all-targets
+  # checks the integrations so, since the dev-dependencies bring std along.
   clippy:
     runs-on: ubuntu-latest
     steps:
@@ -50,10 +52,12 @@ jobs:
     - run: cargo clippy -p koine --all-targets --no-default-features --features language -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features country -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features locale -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features alloc,locale -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,serde -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,musli01 -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,sqll014 -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,yew023 -- -D warnings
+    - run: cargo clippy -p koine --no-default-features --features locale,serde,musli01,sqll014 -- -D warnings
     - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   wasm:

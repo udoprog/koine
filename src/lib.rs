@@ -36,25 +36,33 @@
 //!
 //! Each table is its own feature, so a crate compiles only the tables it
 //! uses; the language table is by far the largest, with every ISO 639-3
-//! code. The default features are `language`, `country` and `locale`.
+//! code. The default features are `std`, `language`, `country` and `locale`.
 //!
 //! A dependency that is not yet 1.0 and appears in the API is named after
 //! its version: `musli01` for musli 0.1, `sqll014` for sqll 0.14 and `yew023`
 //! for yew 0.23. A later version is added beside it, so a koine upgrade never
 //! forces an app onto a new musli, sqll or yew.
 //!
+//! `std` is on by default and implies `alloc`. Each is passed on to the
+//! dependencies that have a feature of the same name, so leaving `std` out
+//! builds them without it too.
+//!
 //! | Feature | Module | What it provides |
 //! |---|---|---|
+//! | `std` | | The standard library, in koine and its dependencies (implies `alloc`) |
+//! | `alloc` | | The `alloc` crate, in koine and its dependencies; with `sqll014` it keeps the messages of the errors koine returns |
 //! | `language` | [`language`] | [`Language`] and the ISO 639-3 table: codes, ISO 639-1 and 639-2 forms, scope, type, English name and a flag country |
 //! | `country` | [`country`] | [`Country`] and the ISO 3166-1 table: alpha-2, alpha-3 and numeric codes, English name, UN M49 region and sub-region |
 //! | `locale` | [`locale`] | [`Locale`] and the table of valid language+country combinations (implies `language` and `country`) |
 //! | `serde` | | serde `Serialize` and `Deserialize` as the string forms |
 //! | `musli01` | | musli 0.1 `Encode` and `Decode` as the string forms |
 //! | `sqll014` | | sqll 0.14 `FromColumn` and `BindValue`, as a stable integer: the code's bytes big-endian for [`Language`] (`eng` is `0x656e6700`) and [`Country`] (`US` is `0x55530000`), [`Locale::to_u64`] for [`Locale`], and `0` for `DEFAULT`. A well-formed code missing from the tables reads back unchanged |
-//! | `yew023` | | yew 0.23 `IntoPropValue<VNode>` for all three, `IntoPropValue<Option<AttrValue>>` for [`Country`] (its name) and [`Locale`] (its code), and `From<Country>` for `Key` |
+//! | `yew023` | | yew 0.23 `IntoPropValue<VNode>` for all three, `IntoPropValue<Option<AttrValue>>` for [`Country`] (its name) and [`Locale`] (its code), and `From<Country>` for `Key` (implies `alloc`) |
 //!
-//! With `default-features = false`, a crate that needs only countries takes
-//! `features = ["country"]` and compiles none of the language table.
+//! With `default-features = false`, a crate names every feature it needs,
+//! `std` included: one that needs only countries takes
+//! `features = ["std", "country"]` and compiles none of the language table,
+//! and a `no_std` crate leaves out `std`, or names `alloc` alone.
 //!
 //! <br>
 //!
@@ -63,8 +71,8 @@
 //! ```toml
 //! [dependencies]
 //! koine = "0.1.0"
-//! # Only the countries, with serde.
-//! koine = { version = "0.1.0", default-features = false, features = ["country", "serde"] }
+//! # Only the countries, with serde and the standard library.
+//! koine = { version = "0.1.0", default-features = false, features = ["std", "country", "serde"] }
 //! ```
 //!
 //! <br>
@@ -131,8 +139,11 @@
 #![deny(missing_docs)]
 #![cfg_attr(koine_docsrs, feature(doc_cfg))]
 
-#[cfg(any(test, feature = "yew023"))]
+#[cfg(any(test, feature = "alloc"))]
 extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 #[macro_use]
 mod macros;
