@@ -28,7 +28,8 @@ macro_rules! define_code {
         /// The in-memory representation is the code's bytes directly. The
         /// only place the bytes are turned into an integer is the `sqll015`
         /// conversion, which pins the byte order so the stored value is the
-        /// same whatever the host's endianness.
+        /// same whatever the host's endianness; see
+        /// [Storage in SQLite](crate#storage-in-sqlite).
         #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
         pub struct $name([u8; 4]);
 
@@ -340,6 +341,7 @@ macro_rules! code_musli {
 #[allow(unused_macros)]
 macro_rules! code_sqll {
     ($feature:literal, $sqll:ident, $name:ident, $stored_msg:literal) => {
+        /// Stored as an integer; see [Storage in SQLite](crate#storage-in-sqlite).
         #[cfg(feature = $feature)]
         #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
         impl ::$sqll::FromColumn<'_> for $name {
@@ -364,6 +366,7 @@ macro_rules! code_sqll {
             }
         }
 
+        /// Stored as an integer; see [Storage in SQLite](crate#storage-in-sqlite).
         #[cfg(feature = $feature)]
         #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
         impl ::$sqll::BindValue for $name {

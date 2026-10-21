@@ -37,45 +37,101 @@
 //!
 //! ## Features
 //!
-//! Each table is its own feature, so a crate compiles only the tables it
-//! uses; the language table is by far the largest, with every ISO 639-3
-//! code. The default features are `std`, `language`, `country` and `locale`.
-//!
-//! A dependency that is not yet 1.0 and appears in the API is named after
-//! its version: `musli02` for musli 0.2, `sqll015` for sqll 0.15 and `yew023`
-//! for yew 0.23.
-//!
-//! `std` is on by default and implies `alloc`. Each is passed on to the
-//! dependencies that have a feature of the same name, so leaving `std` out
-//! builds them without it too.
-//!
-//! | Feature | Module | What it provides |
-//! |---|---|---|
-//! | `std` | | The standard library, in koine and its dependencies (implies `alloc`) |
-//! | `alloc` | | The `alloc` crate, in koine and its dependencies; with `sqll015` it keeps the messages of the errors koine returns |
-//! | `language` | [`language`] | [`Language`] and the ISO 639-3 table: codes, ISO 639-1 and 639-2 forms, scope, type, English name and a flag country |
-//! | `country` | [`country`] | [`Country`] and the ISO 3166-1 table: alpha-2, alpha-3 and numeric codes, English name, UN M49 region and sub-region |
-//! | `locale` | [`locale`] | [`Locale`] and the table of valid language+country combinations (implies `language` and `country`) |
-//! | `serde` | | serde `Serialize` and `Deserialize` as the string forms |
-//! | `musli02` | | musli 0.2 `Encode` and `Decode` as the string forms |
-//! | `sqll015` | | Needs the Rust version sqll 0.15 needs, which is newer than koine's own. sqll 0.15 `FromColumn` and `BindValue`, as a stable integer: the code's bytes big-endian for [`Language`] (`eng` is `0x656e6700`) and [`Country`] (`US` is `0x55530000`), [`Locale::to_u64`] for [`Locale`], and `0` for `DEFAULT`. A well-formed code missing from the tables reads back unchanged |
-//! | `yew023` | | yew 0.23 `IntoPropValue<VNode>` for all three, `IntoPropValue<Option<AttrValue>>` for [`Country`] (its name) and [`Locale`] (its code), and `From<Country>` for `Key` (implies `alloc`) |
-//!
-//! With `default-features = false`, a crate names every feature it needs,
-//! `std` included: one that needs only countries takes
-//! `features = ["std", "country"]` and compiles none of the language table,
-//! and a `no_std` crate leaves out `std`, or names `alloc` alone.
-//!
-//! <br>
-//!
-//! ## Using it
+//! The default features give you all three types and their tables, with the
+//! standard library:
 //!
 //! ```toml
 //! [dependencies]
 //! koine = "0.3.1"
-//! # Only the countries, with serde and the standard library.
-//! koine = { version = "0.3.1", default-features = false, features = ["std", "country", "serde"] }
 //! ```
+//!
+//! Everything else is opt-in, and you can turn off the defaults to build only
+//! what you use (see [Choosing features](#choosing-features)).
+//!
+//! <br>
+//!
+//! ### Data tables
+//!
+//! Each type comes with its own table, so a crate compiles only the tables it
+//! uses. The language table, which holds every ISO 639-3 code, is by far the
+//! largest.
+//!
+//! | Feature | Default | What it lets you do |
+//! |---|---|---|
+//! | `language` | yes | Use [`Language`] and look up any ISO 639-3 language: its ISO 639-1 and 639-2 codes, English name, scope and type, and a country whose flag can stand for it. See [`language`]. |
+//! | `country` | yes | Use [`Country`] and look up any ISO 3166-1 country: its alpha-2, alpha-3 and numeric codes, English name, and UN M49 region and sub-region. See [`country`]. |
+//! | `locale` | yes | Use [`Locale`], a language with an optional country such as `pt-BR`, and check whether a language and country form a known locale. Turns on `language` and `country`. See [`locale`]. |
+//!
+//! <br>
+//!
+//! ### Integrations
+//!
+//! Each integration lets you use koine's types directly with another crate.
+//! None is on by default.
+//!
+//! | Feature | What it lets you do |
+//! |---|---|
+//! | `serde` | Serialize and deserialize koine's types with serde, as their codes (`"eng"`, `"SE"`, `"pt-BR"`). |
+//! | `musli02` | Encode and decode koine's types with musli 0.2, as their codes. |
+//! | `sqll015` | Store koine's types in SQLite with sqll 0.15: bind them as query parameters and read them back from columns. They are stored as integers in a stable format; see [Storage in SQLite](#storage-in-sqlite). |
+//! | `yew023` | Pass koine's types straight to yew 0.23: any of them as an `Html` prop, shown as its code; a [`Country`] or [`Locale`] as an attribute value, giving the country's English name or the locale's code; and a [`Country`] as a list `key`. Turns on `alloc`. |
+//!
+//! An integration with a crate that is not yet 1.0 is named after the version
+//! it supports: `musli02` is musli 0.2, `sqll015` is sqll 0.15 and `yew023` is
+//! yew 0.23. Support for a later version gets a feature of its own beside the
+//! existing one, so upgrading koine never moves you to a new version of those
+//! crates by surprise.
+//!
+//! <br>
+//!
+//! ### Platform
+//!
+//! | Feature | Default | What it lets you do |
+//! |---|---|---|
+//! | `std` | yes | Use the standard library. Turns on `alloc`. |
+//! | `alloc` | with `std` | Use koine in a `no_std` crate that has an allocator. |
+//!
+//! koine itself needs neither: without them it is `no_std` and does not
+//! allocate. Both are passed on to the integrations you turn on, so leaving
+//! out `std` builds those without the standard library too.
+//!
+//! <br>
+//!
+//! ### Choosing features
+//!
+//! With `default-features = false`, name every feature you need, `std`
+//! included. For example, either of:
+//!
+//! ```toml
+//! [dependencies]
+//! # Countries only, with serde, in a crate that uses the standard library.
+//! koine = { version = "0.3.1", default-features = false, features = ["std", "country", "serde"] }
+//! # Languages only, in a no_std crate without an allocator.
+//! koine = { version = "0.3.1", default-features = false, features = ["language"] }
+//! ```
+//!
+//! <br>
+//!
+//! ## Storage in SQLite
+//!
+//! With the `sqll015` feature, koine's types are stored in SQLite as integers.
+//! This format is a compatibility promise: koine keeps it stable across
+//! releases, so values you have stored keep reading back the same after you
+//! upgrade.
+//!
+//! * A [`Language`] is its code's ASCII bytes, padded with zero bytes to four
+//!   and read as a big-endian 32-bit integer: `eng` is `0x656e6700`.
+//! * A [`Country`] is its alpha-2 code stored the same way: `US` is
+//!   `0x55530000`.
+//! * A [`Locale`] is [`Locale::to_u64`]: the country's integer in the high 32
+//!   bits and the language's in the low 32 bits.
+//! * The `DEFAULT` value of each type is `0`.
+//!
+//! The byte order is fixed, so the stored value is the same on every
+//! platform. Reading a value checks only that it is well formed, not that it
+//! is in the tables, so a code that a later release drops from its tables
+//! still reads back unchanged. A malformed value is an error with sqll's
+//! `MISMATCH` code; its message is kept only with the `alloc` feature.
 //!
 //! <br>
 //!

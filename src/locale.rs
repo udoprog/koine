@@ -737,7 +737,8 @@ impl fmt::Write for Buf {
 /// `$feature`.
 macro_rules! locale_sqll {
     ($feature:literal, $sqll:ident) => {
-        /// Stored as the integer of [`Locale::to_u64`].
+        /// Stored as the integer of [`Locale::to_u64`]; see
+        /// [Storage in SQLite](crate#storage-in-sqlite).
         #[cfg(feature = $feature)]
         #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
         impl $sqll::FromColumn<'_> for Locale {
@@ -762,7 +763,8 @@ macro_rules! locale_sqll {
             }
         }
 
-        /// Stored as the integer of [`Locale::to_u64`].
+        /// Stored as the integer of [`Locale::to_u64`]; see
+        /// [Storage in SQLite](crate#storage-in-sqlite).
         #[cfg(feature = $feature)]
         #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
         impl $sqll::BindValue for Locale {
