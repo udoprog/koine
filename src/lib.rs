@@ -42,7 +42,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! koine = "0.3.1"
+//! koine = "0.3.2"
 //! ```
 //!
 //! Everything else is opt-in, and you can turn off the defaults to build only
@@ -105,9 +105,9 @@
 //! ```toml
 //! [dependencies]
 //! # Countries only, with serde, in a crate that uses the standard library.
-//! koine = { version = "0.3.1", default-features = false, features = ["std", "country", "serde"] }
+//! koine = { version = "0.3.2", default-features = false, features = ["std", "country", "serde"] }
 //! # Languages only, in a no_std crate without an allocator.
-//! koine = { version = "0.3.1", default-features = false, features = ["language"] }
+//! koine = { version = "0.3.2", default-features = false, features = ["language"] }
 //! ```
 //!
 //! <br>
