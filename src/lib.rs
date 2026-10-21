@@ -72,9 +72,9 @@
 //!
 //! ```toml
 //! [dependencies]
-//! koine = "0.3.0"
+//! koine = "0.3.1"
 //! # Only the countries, with serde and the standard library.
-//! koine = { version = "0.3.0", default-features = false, features = ["std", "country", "serde"] }
+//! koine = { version = "0.3.1", default-features = false, features = ["std", "country", "serde"] }
 //! ```
 //!
 //! <br>
