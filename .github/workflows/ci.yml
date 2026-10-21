@@ -39,8 +39,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@1.88
-    # Every feature but sqll014: sqll sets its own, higher minimum Rust version.
-    - run: cargo build -p koine --features serde,musli01,yew023
+    # Every feature but the sqll ones: sqll sets its own, higher minimum Rust version.
+    - run: cargo build -p koine --features serde,musli02,yew023
 
   # Each feature is checked alone, because a feature that only compiles
   # alongside another breaks the crates that take it alone. Without default
@@ -59,10 +59,10 @@ jobs:
     - run: cargo clippy -p koine --all-targets --no-default-features --features locale -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features alloc,locale -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,serde -- -D warnings
-    - run: cargo clippy -p koine --all-targets --no-default-features --features language,musli01 -- -D warnings
-    - run: cargo clippy -p koine --all-targets --no-default-features --features language,sqll014 -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,musli02 -- -D warnings
+    - run: cargo clippy -p koine --all-targets --no-default-features --features language,sqll015 -- -D warnings
     - run: cargo clippy -p koine --all-targets --no-default-features --features language,yew023 -- -D warnings
-    - run: cargo clippy -p koine --no-default-features --features locale,serde,musli01,sqll014 -- -D warnings
+    - run: cargo clippy -p koine --no-default-features --features locale,serde,musli02,sqll015 -- -D warnings
     - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   wasm:
@@ -72,7 +72,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         targets: wasm32-unknown-unknown
-    - run: cargo check -p koine --target wasm32-unknown-unknown --features serde,musli01,yew023
+    - run: cargo check -p koine --target wasm32-unknown-unknown --features serde,musli02,yew023
 
   docs:
     runs-on: ubuntu-latest

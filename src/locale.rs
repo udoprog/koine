@@ -656,63 +656,71 @@ impl<'de> serde::Deserialize<'de> for Locale {
     }
 }
 
-#[cfg(feature = "musli01")]
-#[cfg_attr(koine_docsrs, doc(cfg(feature = "musli01")))]
-impl<M> musli_core01::Encode<M> for Locale {
-    type Encode = Self;
+/// musli `Encode` and `Decode` as the string form, against the musli-core
+/// named `$musli` under `$feature`.
+macro_rules! locale_musli {
+    ($feature:literal, $musli:ident) => {
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl<M> $musli::Encode<M> for Locale {
+            type Encode = Self;
 
-    #[inline]
-    fn encode<E>(&self, encoder: E) -> Result<(), E::Error>
-    where
-        E: musli_core01::Encoder<Mode = M>,
-    {
-        // At most a 3-letter language, `-` and a 2-letter country.
-        let mut buf = Buf::default();
-        fmt::write(&mut buf, format_args!("{self}")).map_err(|_| {
-            musli_core01::Context::message(encoder.cx(), "locale longer than expected")
-        })?;
-        encoder.encode_string(buf.as_str())
-    }
+            #[inline]
+            fn encode<E>(&self, encoder: E) -> Result<(), E::Error>
+            where
+                E: $musli::Encoder<Mode = M>,
+            {
+                // At most a 3-letter language, `-` and a 2-letter country.
+                let mut buf = Buf::default();
+                fmt::write(&mut buf, format_args!("{self}")).map_err(|_| {
+                    $musli::Context::message(encoder.cx(), "locale longer than expected")
+                })?;
+                encoder.encode_string(buf.as_str())
+            }
 
-    #[inline]
-    fn as_encode(&self) -> &Self::Encode {
-        self
-    }
+            #[inline]
+            fn as_encode(&self) -> &Self::Encode {
+                self
+            }
+        }
+
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl<'de, M, A> $musli::Decode<'de, M, A> for Locale
+        where
+            A: $musli::Allocator,
+        {
+            #[inline]
+            fn decode<D>(decoder: D) -> Result<Self, D::Error>
+            where
+                D: $musli::Decoder<'de, Mode = M, Allocator = A>,
+            {
+                use $musli::Context as _;
+                let cx = decoder.cx();
+                decoder.decode_unsized(|s: &str| s.parse::<Locale>().map_err(cx.map()))
+            }
+        }
+    };
 }
 
-#[cfg(feature = "musli01")]
-#[cfg_attr(koine_docsrs, doc(cfg(feature = "musli01")))]
-impl<'de, M, A> musli_core01::Decode<'de, M, A> for Locale
-where
-    A: musli_core01::Allocator,
-{
-    #[inline]
-    fn decode<D>(decoder: D) -> Result<Self, D::Error>
-    where
-        D: musli_core01::Decoder<'de, Mode = M, Allocator = A>,
-    {
-        use musli_core01::Context as _;
-        let cx = decoder.cx();
-        decoder.decode_unsized(|s: &str| s.parse::<Locale>().map_err(cx.map()))
-    }
-}
+locale_musli!("musli02", musli_core02);
 
 /// A fixed buffer to format a locale into without allocating.
-#[cfg(feature = "musli01")]
+#[cfg(feature = "musli02")]
 #[derive(Default)]
 struct Buf {
     bytes: [u8; 16],
     len: usize,
 }
 
-#[cfg(feature = "musli01")]
+#[cfg(feature = "musli02")]
 impl Buf {
     fn as_str(&self) -> &str {
         core::str::from_utf8(&self.bytes[..self.len]).unwrap_or_default()
     }
 }
 
-#[cfg(feature = "musli01")]
+#[cfg(feature = "musli02")]
 impl fmt::Write for Buf {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let end = self.len + s.len();
@@ -723,44 +731,52 @@ impl fmt::Write for Buf {
     }
 }
 
-/// Stored as the integer of [`Locale::to_u64`].
-#[cfg(feature = "sqll014")]
-#[cfg_attr(koine_docsrs, doc(cfg(feature = "sqll014")))]
-impl sqll014::FromColumn<'_> for Locale {
-    type Type = sqll014::ty::Integer;
+/// sqll `FromColumn` and `BindValue` against the sqll named `$sqll` under
+/// `$feature`.
+macro_rules! locale_sqll {
+    ($feature:literal, $sqll:ident) => {
+        /// Stored as the integer of [`Locale::to_u64`].
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl $sqll::FromColumn<'_> for Locale {
+            type Type = $sqll::ty::Integer;
 
-    #[inline]
-    fn from_column(
-        stmt: &sqll014::Statement,
-        index: sqll014::ty::Integer,
-    ) -> sqll014::Result<Self> {
-        let value = i64::from_column(stmt, index)?;
+            #[inline]
+            fn from_column(
+                stmt: &$sqll::Statement,
+                index: $sqll::ty::Integer,
+            ) -> $sqll::Result<Self> {
+                let value = i64::from_column(stmt, index)?;
 
-        // Only the shape is checked, so that a code missing from the current
-        // tables still reads.
-        match Locale::from_u64_lossless(value.cast_unsigned()) {
-            Some(locale) => Ok(locale),
-            None => Err(sqll014::Error::new(
-                sqll014::Code::MISMATCH,
-                "invalid stored locale",
-            )),
+                // Only the shape is checked, so that a code missing from the current
+                // tables still reads.
+                match Locale::from_u64_lossless(value.cast_unsigned()) {
+                    Some(locale) => Ok(locale),
+                    None => Err($sqll::Error::new(
+                        $sqll::Code::MISMATCH,
+                        "invalid stored locale",
+                    )),
+                }
+            }
         }
-    }
+
+        /// Stored as the integer of [`Locale::to_u64`].
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl $sqll::BindValue for Locale {
+            #[inline]
+            fn bind_value(
+                &self,
+                stmt: &mut $sqll::Statement,
+                index: $sqll::Index,
+            ) -> $sqll::Result<()> {
+                self.to_u64().cast_signed().bind_value(stmt, index)
+            }
+        }
+    };
 }
 
-/// Stored as the integer of [`Locale::to_u64`].
-#[cfg(feature = "sqll014")]
-#[cfg_attr(koine_docsrs, doc(cfg(feature = "sqll014")))]
-impl sqll014::BindValue for Locale {
-    #[inline]
-    fn bind_value(
-        &self,
-        stmt: &mut sqll014::Statement,
-        index: sqll014::Index,
-    ) -> sqll014::Result<()> {
-        self.to_u64().cast_signed().bind_value(stmt, index)
-    }
-}
+locale_sqll!("sqll015", sqll015);
 
 #[cfg(feature = "yew023")]
 #[cfg_attr(koine_docsrs, doc(cfg(feature = "yew023")))]

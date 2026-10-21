@@ -26,7 +26,7 @@ macro_rules! define_code {
         $(#[$meta])*
         ///
         /// The in-memory representation is the code's bytes directly. The
-        /// only place the bytes are turned into an integer is the `sqll014`
+        /// only place the bytes are turned into an integer is the `sqll015`
         /// conversion, which pins the byte order so the stored value is the
         /// same whatever the host's endianness.
         #[derive(Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -277,15 +277,34 @@ macro_rules! define_code {
             }
         }
 
-        #[cfg(feature = "musli01")]
-        #[cfg_attr(koine_docsrs, doc(cfg(feature = "musli01")))]
-        impl<M> ::musli_core01::Encode<M> for $name {
+        code_musli!("musli02", musli_core02, $name);
+        code_sqll!("sqll015", sqll015, $name, $stored_msg);
+
+        #[cfg(feature = "yew023")]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = "yew023")))]
+        impl ::yew023::html::IntoPropValue<::yew023::virtual_dom::VNode> for $name {
+            #[inline]
+            fn into_prop_value(self) -> ::yew023::virtual_dom::VNode {
+                ::alloc::string::ToString::to_string(&self).into()
+            }
+        }
+    };
+}
+
+/// musli `Encode` and `Decode` for a code type defined by `define_code!`, as
+/// its string form, against the musli-core named `$musli` under `$feature`.
+#[allow(unused_macros)]
+macro_rules! code_musli {
+    ($feature:literal, $musli:ident, $name:ident) => {
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl<M> ::$musli::Encode<M> for $name {
             type Encode = Self;
 
             #[inline]
             fn encode<E>(&self, encoder: E) -> Result<(), E::Error>
             where
-                E: ::musli_core01::Encoder<Mode = M>,
+                E: ::$musli::Encoder<Mode = M>,
             {
                 encoder.encode_string(self.as_str())
             }
@@ -296,33 +315,40 @@ macro_rules! define_code {
             }
         }
 
-        #[cfg(feature = "musli01")]
-        #[cfg_attr(koine_docsrs, doc(cfg(feature = "musli01")))]
-        impl<'de, M, A> ::musli_core01::Decode<'de, M, A> for $name
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl<'de, M, A> ::$musli::Decode<'de, M, A> for $name
         where
-            A: ::musli_core01::Allocator,
+            A: ::$musli::Allocator,
         {
             #[inline]
             fn decode<D>(decoder: D) -> Result<Self, D::Error>
             where
-                D: ::musli_core01::Decoder<'de, Mode = M, Allocator = A>,
+                D: ::$musli::Decoder<'de, Mode = M, Allocator = A>,
             {
-                use ::musli_core01::Context as _;
+                use ::$musli::Context as _;
                 let cx = decoder.cx();
                 decoder.decode_unsized(|s: &str| s.parse::<$name>().map_err(cx.map()))
             }
         }
+    };
+}
 
-        #[cfg(feature = "sqll014")]
-        #[cfg_attr(koine_docsrs, doc(cfg(feature = "sqll014")))]
-        impl ::sqll014::FromColumn<'_> for $name {
-            type Type = ::sqll014::ty::Integer;
+/// sqll `FromColumn` and `BindValue` for a code type defined by
+/// `define_code!`, against the sqll named `$sqll` under `$feature`.
+#[allow(unused_macros)]
+macro_rules! code_sqll {
+    ($feature:literal, $sqll:ident, $name:ident, $stored_msg:literal) => {
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl ::$sqll::FromColumn<'_> for $name {
+            type Type = ::$sqll::ty::Integer;
 
             #[inline]
             fn from_column(
-                stmt: &::sqll014::Statement,
-                index: ::sqll014::ty::Integer,
-            ) -> ::sqll014::Result<Self> {
+                stmt: &::$sqll::Statement,
+                index: ::$sqll::ty::Integer,
+            ) -> ::$sqll::Result<Self> {
                 let value = i64::from_column(stmt, index)?;
 
                 // Only the shape is checked, so that a code missing from the
@@ -333,29 +359,20 @@ macro_rules! define_code {
                     return Ok(code);
                 }
 
-                Err(::sqll014::Error::new(::sqll014::Code::MISMATCH, $stored_msg))
+                Err(::$sqll::Error::new(::$sqll::Code::MISMATCH, $stored_msg))
             }
         }
 
-        #[cfg(feature = "sqll014")]
-        #[cfg_attr(koine_docsrs, doc(cfg(feature = "sqll014")))]
-        impl ::sqll014::BindValue for $name {
+        #[cfg(feature = $feature)]
+        #[cfg_attr(koine_docsrs, doc(cfg(feature = $feature)))]
+        impl ::$sqll::BindValue for $name {
             #[inline]
             fn bind_value(
                 &self,
-                stmt: &mut ::sqll014::Statement,
-                index: ::sqll014::Index,
-            ) -> ::sqll014::Result<()> {
+                stmt: &mut ::$sqll::Statement,
+                index: ::$sqll::Index,
+            ) -> ::$sqll::Result<()> {
                 i64::from(u32::from_be_bytes(self.0)).bind_value(stmt, index)
-            }
-        }
-
-        #[cfg(feature = "yew023")]
-        #[cfg_attr(koine_docsrs, doc(cfg(feature = "yew023")))]
-        impl ::yew023::html::IntoPropValue<::yew023::virtual_dom::VNode> for $name {
-            #[inline]
-            fn into_prop_value(self) -> ::yew023::virtual_dom::VNode {
-                ::alloc::string::ToString::to_string(&self).into()
             }
         }
     };

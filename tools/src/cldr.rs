@@ -18,6 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Cursor, Read as _};
 
 use anyhow::{Context, Result, anyhow, bail};
+use quick_xml::XmlVersion;
 use quick_xml::events::Event;
 
 /// The pinned CLDR release. Bumping it is: change this, run
@@ -61,8 +62,9 @@ pub fn extract(zip: &[u8]) -> Result<Vec<(String, String)>> {
 
     let names = archive
         .file_names()
-        .map(str::to_owned)
-        .collect::<BTreeSet<_>>();
+        .map(|name| Ok(name?.into_owned()))
+        .collect::<Result<BTreeSet<_>>>()
+        .context("Reading CLDR archive file names")?;
 
     // The archive may or may not put everything in a top-level directory.
     let prefix = names
@@ -465,15 +467,15 @@ fn elements(xml: &str) -> Result<Vec<Element>> {
         match event {
             Event::Start(start) | Event::Empty(start) => {
                 let parent = stack.last().map(|e| e.name.clone()).unwrap_or_default();
-                let name = String::from_utf8(start.name().as_ref().to_vec())?;
+                let name = start.name().as_ref().to_owned();
 
                 let mut attrs = Vec::new();
 
                 for attr in start.attributes() {
                     let attr = attr?;
                     attrs.push((
-                        String::from_utf8(attr.key.as_ref().to_vec())?,
-                        attr.unescape_value()?.into_owned(),
+                        attr.key.as_ref().to_owned(),
+                        attr.normalized_value(XmlVersion::Implicit1_0)?.into_owned(),
                     ));
                 }
 
@@ -495,12 +497,12 @@ fn elements(xml: &str) -> Result<Vec<Element>> {
             }
             Event::Text(text) => {
                 if let Some(element) = stack.last_mut() {
-                    element.text.push_str(&text.decode()?);
+                    element.text.push_str(&text);
                 }
             }
             Event::CData(data) => {
                 if let Some(element) = stack.last_mut() {
-                    element.text.push_str(&data.decode()?);
+                    element.text.push_str(&data);
                 }
             }
             Event::GeneralRef(reference) => {
@@ -513,9 +515,7 @@ fn elements(xml: &str) -> Result<Vec<Element>> {
                     continue;
                 }
 
-                let name = reference.decode()?;
-
-                let c = match name.as_ref() {
+                let c = match &*reference {
                     "amp" => '&',
                     "lt" => '<',
                     "gt" => '>',
