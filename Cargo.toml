@@ -49,4 +49,4 @@ yew023 = { package = "yew", version = "0.23.0", default-features = false, option
 
 [dev-dependencies]
 serde_json = "1.0.151"
-musli = { version = "0.2.0", features = ["json"] }
+musli = { version = "0.2.0", features = ["json", "storage", "wire"] }

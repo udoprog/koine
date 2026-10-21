@@ -47,6 +47,58 @@ macro_rules! musli_tests {
                     value
                 );
             }
+
+            /// `["eng","US","en-US","default"]` in the storage format.
+            const STORAGE: &[u8] = &[
+                4, 3, 101, 110, 103, 2, 85, 83, 5, 101, 110, 45, 85, 83, 7, 100, 101, 102, 97, 117,
+                108, 116,
+            ];
+
+            /// The same in the wire format.
+            const WIRE: &[u8] = &[
+                132, 67, 101, 110, 103, 66, 85, 83, 69, 101, 110, 45, 85, 83, 71, 100, 101, 102,
+                97, 117, 108, 116,
+            ];
+
+            /// The encoded bytes are pinned, so a change to how the impls
+            /// encode cannot change the wire format unnoticed.
+            #[test]
+            fn musli_encoding_is_pinned() {
+                let value = (Language::ENG, Country::US, Locale::EN_US, Locale::DEFAULT);
+                let storage = ::$musli::storage::to_vec(&value).unwrap();
+                let wire = ::$musli::wire::to_vec(&value).unwrap();
+                assert_eq!(storage, STORAGE);
+                assert_eq!(wire, WIRE);
+                assert_eq!(
+                    ::$musli::storage::from_slice::<(Language, Country, Locale, Locale)>(&storage)
+                        .unwrap(),
+                    value
+                );
+                assert_eq!(
+                    ::$musli::wire::from_slice::<(Language, Country, Locale, Locale)>(&wire)
+                        .unwrap(),
+                    value
+                );
+            }
+
+            #[test]
+            fn musli_decode_parses_and_reports_errors() {
+                assert_eq!(
+                    ::$musli::json::from_str::<Language>(r#""en""#).unwrap(),
+                    Language::ENG
+                );
+                assert_eq!(
+                    ::$musli::json::from_str::<Country>(r#""us""#).unwrap(),
+                    Country::US
+                );
+                let err = ::$musli::json::from_str::<Locale>(r#""en-ZZ""#).unwrap_err();
+                assert!(
+                    err.to_string().contains("unknown country in locale code"),
+                    "{err}"
+                );
+                assert!(::$musli::json::from_str::<Language>(r#""zzz""#).is_err());
+                assert!(::$musli::json::from_str::<Country>(r#""ZZ""#).is_err());
+            }
         }
     };
 }

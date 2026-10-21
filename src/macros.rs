@@ -306,6 +306,9 @@ macro_rules! code_musli {
             where
                 E: ::$musli::Encoder<Mode = M>,
             {
+                // Not `musli::display::encode`, which formats into a buffer
+                // allocated through `Encoder::collect_string`: the code is
+                // already a `&str`.
                 encoder.encode_string(self.as_str())
             }
 
@@ -326,9 +329,7 @@ macro_rules! code_musli {
             where
                 D: ::$musli::Decoder<'de, Mode = M, Allocator = A>,
             {
-                use ::$musli::Context as _;
-                let cx = decoder.cx();
-                decoder.decode_unsized(|s: &str| s.parse::<$name>().map_err(cx.map()))
+                ::$musli::display::decode(decoder)
             }
         }
     };

@@ -670,7 +670,11 @@ macro_rules! locale_musli {
             where
                 E: $musli::Encoder<Mode = M>,
             {
-                // At most a 3-letter language, `-` and a 2-letter country.
+                // Not `musli::display::encode`: it formats through
+                // `Encoder::collect_string`, which allocates a buffer from the
+                // context's allocator. The longest form is a 3-letter
+                // language, `-` and a 2-letter country, so a stack buffer
+                // does.
                 let mut buf = Buf::default();
                 fmt::write(&mut buf, format_args!("{self}")).map_err(|_| {
                     $musli::Context::message(encoder.cx(), "locale longer than expected")
@@ -695,9 +699,7 @@ macro_rules! locale_musli {
             where
                 D: $musli::Decoder<'de, Mode = M, Allocator = A>,
             {
-                use $musli::Context as _;
-                let cx = decoder.cx();
-                decoder.decode_unsized(|s: &str| s.parse::<Locale>().map_err(cx.map()))
+                $musli::display::decode(decoder)
             }
         }
     };
