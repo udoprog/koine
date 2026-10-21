@@ -72,9 +72,9 @@ and a `no_std` crate leaves out `std`, or names `alloc` alone.
 
 ```toml
 [dependencies]
-koine = "0.2.0"
+koine = "0.3.0"
 # Only the countries, with serde and the standard library.
-koine = { version = "0.2.0", default-features = false, features = ["std", "country", "serde"] }
+koine = { version = "0.3.0", default-features = false, features = ["std", "country", "serde"] }
 ```
 
 <br>
